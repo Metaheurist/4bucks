@@ -1,4 +1,4 @@
-# Build Save 4Bucks - Windows onefile EXE (x64 and/or x86)
+# Build Save 4Bucks - Windows onefile EXE via flet pack (x64 and/or x86)
 param(
     [switch]$SkipChecks,
     [ValidateSet('All', 'x64', 'x86')]
@@ -115,17 +115,35 @@ function Build-One {
         [string]$PythonExe
     )
     Test-PythonArch -PythonExe $PythonExe -Expected $TargetArch
-    Write-Host "Running PyInstaller ($TargetArch) with $PythonExe ..."
-    $env:SAVE4BUCKS_ARCH = $TargetArch
-    try {
-        & $PythonExe -m PyInstaller --noconfirm --clean (Join-Path $root 'save4bucks.spec')
-        if ($LASTEXITCODE -ne 0) { throw "PyInstaller failed for $TargetArch" }
+    $scriptsDir = Split-Path $PythonExe
+    $flet = Join-Path $scriptsDir 'flet.exe'
+    if (-not (Test-Path $flet)) {
+        Write-Host 'Installing flet-cli ...'
+        & $PythonExe -m pip install 'flet-cli==1.0.1' -q
+        if ($LASTEXITCODE -ne 0) { throw 'flet-cli install failed' }
     }
-    finally {
-        Remove-Item Env:SAVE4BUCKS_ARCH -ErrorAction SilentlyContinue
-    }
+    if (-not (Test-Path $flet)) { throw "flet.exe not found next to $PythonExe" }
 
-    $exe = Join-Path $root "dist\Save4Bucks-$TargetArch.exe"
+    $name = "Save4Bucks-$TargetArch"
+    $icon = Join-Path $root 'assets\icon.ico'
+    Write-Host "Running flet pack ($TargetArch) -> $name ..."
+    & $flet pack (Join-Path $root 'save4bucks.py') `
+        -n $name `
+        -i $icon `
+        --distpath (Join-Path $root 'dist') `
+        -y `
+        --product-name 'Save 4Bucks' `
+        --file-description 'GTA IV CE offline save money editor' `
+        --hidden-import src `
+        --hidden-import src.app `
+        --hidden-import src.detect `
+        --hidden-import src.save_money `
+        --hidden-import src.versioning `
+        --hidden-import src.backup `
+        --hidden-import src.settings
+    if ($LASTEXITCODE -ne 0) { throw "flet pack failed for $TargetArch" }
+
+    $exe = Join-Path $root "dist\$name.exe"
     if (-not (Test-Path $exe)) { throw "Build failed: $exe not found" }
     Write-Host "Built: $exe"
     Get-Item $exe | Format-List Name, Length, LastWriteTime

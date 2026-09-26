@@ -216,8 +216,8 @@ jobs:
             "Automated release from CI." \
             "" \
             "### Artifacts" \
-            "- \`Save4Bucks-x64.exe\` - 64-bit Windows (PyInstaller)" \
-            "- \`Save4Bucks-x86.exe\` - 32-bit Windows (PyInstaller)" \
+            "- \`Save4Bucks-x64.exe\` - 64-bit Windows (Flet / Flutter)" \
+            "- \`Save4Bucks-x86.exe\` - 32-bit Windows (Flet / Flutter)" \
             "" \
             "Close GTAIV.exe before editing saves. Supported CE save version: **57**.")"
 
