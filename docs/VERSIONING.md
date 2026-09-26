@@ -1,4 +1,6 @@
-# Versioning
+# Savegame versioning
+
+App SemVer is separate — see [`src/__init__.py`](../src/__init__.py) and [CHANGELOG.md](CHANGELOG.md).
 
 ## Allowlist
 

@@ -1,5 +1,9 @@
 # Architecture
 
+<a id="nav-architecture"></a>
+
+## Module map
+
 ```text
 UI (app.py)
   → detect.py          find Profiles / list SGTA4 slots / game running?
@@ -7,6 +11,16 @@ UI (app.py)
   → save_money.py      parse BLOCK / read+write money
   → backup.py          dual Autobackup
   → settings.py        persist Autobackup / also-autosave toggles
+```
+
+```mermaid
+flowchart LR
+  select[Select profile + slot]
+  chip[Status chip inspect_save]
+  gate[Refuse if game or version fail]
+  bak[Dual Autobackup fail-closed]
+  patch[Patch money + display money]
+  select --> chip --> gate --> bak --> patch
 ```
 
 ## Data flow
@@ -20,7 +34,7 @@ UI (app.py)
 
 ## App directory
 
-- Frozen EXE: folder containing `Save4Bucks.exe`
+- Frozen EXE: folder containing `Save4Bucks-x64.exe` / `Save4Bucks-x86.exe`
 - Source: repo root (`4bucks/`)
 
 Used for `backups/` and `save4bucks_settings.json`.
