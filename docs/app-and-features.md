@@ -30,7 +30,7 @@ flowchart TB
 
 ### Startup save gate
 
-On every launch, pick a Rockstar Profile and `SGTA4xx` slot, then **Continue**. Last profile/slot are remembered in settings and pre-selected next time. **Change save** is available from the home menu and Settings (not repeated in each editor).
+On every launch, pick a Rockstar Profile and `SGTA4xx` slot, then **Continue**. Last profile/slot/install are remembered in settings and pre-selected next time. The gate also auto-detects GTA IV installs across all drives (Steam / SteamLibrary / Rockstar / registry + `libraryfolders.vdf`), shows **version + modded state**, and lets you Browse to a folder. **Change save** is available from the home menu and Settings (not repeated in each editor).
 
 ### Home menu
 
@@ -55,7 +55,7 @@ Keyboard: Tab moves focus; Enter activates; Esc returns to menu; digits `1`-`4` 
 
 ### Weapons loadout
 
-Episode strip (**IV** / **TLAD** / **TBoGT** / **All** / **Mods**) filters the picker catalog only; the 10 PlayerInfo slots stay the same. Stock and episodic IDs are labeled **stock**; unknown IDs are **mod**. When a GTA IV install is found, `weaponinfo.xml` may resolve extra names.
+Episode strip removed — the picker shows the full IV/TLAD/TBoGT stock list. Mod weapons use the GTA IV install chosen on the save gate (weaponinfo + custom ID). Stock IDs are labeled **stock**; unknown IDs are **mod**.
 
 ### Autobackup
 

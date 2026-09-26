@@ -21,7 +21,12 @@ from .save_vitality import (
 from .save_weapons import read_loadout_file, write_loadout
 from .settings import load_settings, save_settings
 from .versioning import check_write, inspect_save, status_chip
-from .weapon_detect import classify_weapon
+from .weapon_detect import (
+    classify_weapon,
+    inspect_install,
+    list_gtaiv_installs,
+    load_mod_weapon_names,
+)
 from .weapons_catalog import picker_options, short_name
 
 BG = "#12161a"
@@ -37,13 +42,14 @@ ERROR = "#f08080"
 BTN_ON_GREEN = "#12161a"
 
 # Per-view fitted window sizes (user cannot resize; snap on navigate).
+# Sized to content — no scrollbars. Includes brand + status chrome.
 WINDOW_SIZES: dict[str, tuple[int, int]] = {
-    "gate": (560, 420),
-    "menu": (640, 500),
-    "money": (640, 420),
-    "weapons": (760, 620),
-    "vitality": (640, 400),
-    "settings": (560, 380),
+    "gate": (640, 540),
+    "menu": (640, 480),
+    "money": (600, 290),
+    "weapons": (780, 680),
+    "vitality": (620, 360),
+    "settings": (560, 420),
 }
 
 
@@ -74,8 +80,10 @@ class Save4BucksApp:
         self.profiles: list[Path] = []
         self.slots: list[SaveSlot] = []
         self.active_slot: SaveSlot | None = None
+        self.active_install: Path | None = None
+        self._mod_names: dict[int, str] = {}
+        self._installs: list[Path] = []
         self._view = "gate"
-        self._episode = "iv"
         self._equipped_slot = 0
         self._weapon_ids: list[int] = [0] * WEAPON_SLOT_COUNT
         self._ammo_fields: list[ft.TextField] = []
@@ -87,7 +95,7 @@ class Save4BucksApp:
         page.title = f"{APP_NAME} v{__version__}"
         page.theme_mode = ft.ThemeMode.DARK
         page.bgcolor = BG
-        page.padding = 20
+        page.padding = 16
         page.window.resizable = False
         page.window.maximizable = False
         page.theme = ft.Theme(
@@ -105,7 +113,6 @@ class Save4BucksApp:
             focus_color=FOCUS,
         )
         page.on_keyboard_event = self._on_keyboard
-        self._fit_window("gate")
 
         icon = _resource_path("assets", "icon.png")
         if icon.is_file():
@@ -143,9 +150,27 @@ class Save4BucksApp:
             text_style=ft.TextStyle(color=FG, size=13),
             tooltip="SGTA4xx slot to edit",
         )
+        self.install_dd = ft.Dropdown(
+            label="GTA IV install",
+            expand=True,
+            options=[],
+            on_select=lambda _e: self._on_gate_install(),
+            border_color=GREEN_HI,
+            focused_border_color=FOCUS,
+            focused_border_width=2,
+            label_style=ft.TextStyle(color=MUTED),
+            text_style=ft.TextStyle(color=FG, size=12),
+            tooltip="Auto-detected game folder (version + mods)",
+        )
+        self.install_status = ft.Text("", color=MUTED, size=12)
         self.last_used_hint = ft.Text("", color=MUTED, size=12)
         self.active_chip = ft.Text("", color=GOLD, weight=ft.FontWeight.W_600, size=12)
         self.status = ft.Text("", color=MUTED, size=12, selectable=True)
+        self._file_picker = ft.FilePicker()
+        try:
+            page.services.append(self._file_picker)
+        except Exception:
+            page.overlay.append(self._file_picker)
 
         self.amount_field = ft.TextField(
             label="Amount",
@@ -155,16 +180,52 @@ class Save4BucksApp:
             **field_kw,
         )
         self.health_field = ft.TextField(
-            label="Health", value="200", width=110, tooltip="Current health", **field_kw
+            label="Health",
+            value="200",
+            expand=True,
+            tooltip=f"Current health ({UI_CLAMP_MIN:g}–{UI_CLAMP_MAX:g})",
+            border_color=GOLD,
+            focused_border_color=FOCUS,
+            focused_border_width=2,
+            label_style=ft.TextStyle(color=MUTED),
+            text_style=ft.TextStyle(color=FG),
+            cursor_color=FOCUS,
         )
         self.armour_field = ft.TextField(
-            label="Armour", value="100", width=110, tooltip="Current armour", **field_kw
+            label="Armour",
+            value="100",
+            expand=True,
+            tooltip=f"Current armour ({UI_CLAMP_MIN:g}–{UI_CLAMP_MAX:g})",
+            border_color=GOLD,
+            focused_border_color=FOCUS,
+            focused_border_width=2,
+            label_style=ft.TextStyle(color=MUTED),
+            text_style=ft.TextStyle(color=FG),
+            cursor_color=FOCUS,
         )
         self.max_health_field = ft.TextField(
-            label="Max health", value="200", width=110, tooltip="Max health", **field_kw
+            label="Max health",
+            value="200",
+            expand=True,
+            tooltip=f"Max health (0–{UI_MAX_CLAMP})",
+            border_color=GOLD,
+            focused_border_color=FOCUS,
+            focused_border_width=2,
+            label_style=ft.TextStyle(color=MUTED),
+            text_style=ft.TextStyle(color=FG),
+            cursor_color=FOCUS,
         )
         self.max_armour_field = ft.TextField(
-            label="Max armour", value="100", width=110, tooltip="Max armour", **field_kw
+            label="Max armour",
+            value="100",
+            expand=True,
+            tooltip=f"Max armour (0–{UI_MAX_CLAMP})",
+            border_color=GOLD,
+            focused_border_color=FOCUS,
+            focused_border_width=2,
+            label_style=ft.TextStyle(color=MUTED),
+            text_style=ft.TextStyle(color=FG),
+            cursor_color=FOCUS,
         )
         self.autobackup = ft.Checkbox(
             label="Autobackup before write",
@@ -190,13 +251,12 @@ class Save4BucksApp:
             reverse_duration=200,
             switch_in_curve=ft.AnimationCurve.EASE_OUT,
             switch_out_curve=ft.AnimationCurve.EASE_IN,
-            expand=True,
         )
 
         self.brand = ft.Semantics(
             label=f"{APP_NAME} version {__version__}",
             heading_level=1,
-            content=ft.Text(APP_NAME, size=28, weight=ft.FontWeight.BOLD, color=GOLD),
+            content=ft.Text(APP_NAME, size=24, weight=ft.FontWeight.BOLD, color=GOLD),
         )
 
         page.add(
@@ -206,28 +266,36 @@ class Save4BucksApp:
                     self.switcher,
                     ft.Semantics(label="Status", live_region=True, content=self.status),
                 ],
-                expand=True,
-                spacing=16,
+                spacing=10,
+                tight=True,
             )
         )
-        self.refresh_profiles()
+        self._fit_window("gate")
+        self.refresh_gate()
 
     # --- window / nav ---
 
     def _fit_window(self, view: str) -> None:
+        """Snap window to the view's fitted size (no scroll, no wasted chrome)."""
         w, h = WINDOW_SIZES.get(view, (640, 500))
-        self.page.window.width = w
-        self.page.window.height = h
-        self.page.window.min_width = w
-        self.page.window.min_height = h
-        self.page.window.max_width = w
-        self.page.window.max_height = h
+        win = self.page.window
+        # Do not pin max_* to the current size — that blocks shrink on navigate.
+        # User resize is already disabled via resizable=False.
+        win.min_width = 0
+        win.min_height = 0
+        win.max_width = None
+        win.max_height = None
+        win.width = w
+        win.height = h
 
     def _on_keyboard(self, e: ft.KeyboardEvent) -> None:
         key = (e.key or "").lower()
         if key in ("escape", "esc"):
             if self._view not in ("gate", "menu"):
                 self._goto("menu")
+            return
+        if self._view == "gate" and key in ("enter", "return") and not e.ctrl and not e.alt:
+            self._continue_from_gate()
             return
         if self._view == "menu" and not e.ctrl and not e.alt and not e.meta:
             mapping = {"1": "money", "2": "weapons", "3": "vitality", "4": "settings"}
@@ -264,7 +332,6 @@ class Save4BucksApp:
             "vitality": self._build_vitality,
             "settings": self._build_settings,
         }
-        self._fit_window(view)
         self.switcher.content = builders[view]()
         if view == "weapons":
             self._load_weapons_into_ui()
@@ -272,6 +339,7 @@ class Save4BucksApp:
             self._load_vitality_into_ui()
         elif view in ("money", "weapons", "vitality", "menu"):
             self._refresh_active_chip()
+        self._fit_window(view)
         self.page.update()
         self._focus_primary()
 
@@ -282,12 +350,24 @@ class Save4BucksApp:
         if path.is_file():
             return ft.Image(
                 src=f"menu/{name}.svg",
-                width=56,
-                height=56,
+                width=48,
+                height=48,
                 fit=ft.BoxFit.CONTAIN,
                 exclude_from_semantics=True,
             )
-        return ft.Container(width=56, height=56)
+        return ft.Container(width=48, height=48)
+
+    def _gold_icon(self, name: str, *, size: int = 22) -> ft.Control:
+        path = _resource_path("assets", "menu", f"{name}.svg")
+        if path.is_file():
+            return ft.Image(
+                src=f"menu/{name}.svg",
+                width=size,
+                height=size,
+                fit=ft.BoxFit.CONTAIN,
+                exclude_from_semantics=True,
+            )
+        return ft.Container(width=size, height=size)
 
     def _menu_tile(
         self, title: str, blurb: str, view: str, shortcut: str, *, icon: str
@@ -298,9 +378,9 @@ class Save4BucksApp:
                 content=ft.Column(
                     [
                         self._menu_icon(icon),
-                        ft.Text(title, size=17, weight=ft.FontWeight.W_600, color=GOLD),
+                        ft.Text(title, size=15, weight=ft.FontWeight.W_600, color=GOLD),
                     ],
-                    spacing=12,
+                    spacing=6,
                     tight=True,
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                     alignment=ft.MainAxisAlignment.CENTER,
@@ -309,7 +389,7 @@ class Save4BucksApp:
                     bgcolor=PANEL,
                     side=ft.BorderSide(1.5, GOLD),
                     shape=ft.RoundedRectangleBorder(radius=6),
-                    padding=24,
+                    padding=ft.Padding.symmetric(horizontal=12, vertical=10),
                     overlay_color="#e0c04a22",
                 ),
                 tooltip=tip,
@@ -317,7 +397,7 @@ class Save4BucksApp:
                 on_click=lambda _e, v=view: self._goto(v),
             ),
             expand=True,
-            height=148,
+            height=118,
         )
 
     def _build_menu(self) -> ft.Control:
@@ -333,8 +413,7 @@ class Save4BucksApp:
                             "Weapons", "Guns and ammo", "weapons", "2", icon="weapons"
                         ),
                     ],
-                    spacing=14,
-                    expand=True,
+                    spacing=12,
                 ),
                 ft.Row(
                     [
@@ -353,8 +432,7 @@ class Save4BucksApp:
                             icon="settings",
                         ),
                     ],
-                    spacing=14,
-                    expand=True,
+                    spacing=12,
                 ),
                 ft.TextButton(
                     "Change save",
@@ -363,9 +441,8 @@ class Save4BucksApp:
                     on_click=lambda _e: self._goto("gate"),
                 ),
             ],
-            spacing=12,
-            expand=True,
-            alignment=ft.MainAxisAlignment.CENTER,
+            spacing=10,
+            tight=True,
         )
 
     # --- save gate ---
@@ -375,6 +452,10 @@ class Save4BucksApp:
             [
                 ft.Text("Select save", size=18, weight=ft.FontWeight.W_600, color=GOLD),
                 self.last_used_hint,
+                ft.Text("Game", size=13, weight=ft.FontWeight.W_600, color=GOLD),
+                self.install_dd,
+                self.install_status,
+                ft.Text("Save file", size=13, weight=ft.FontWeight.W_600, color=GOLD),
                 self.profile_dd,
                 self.slot_dd,
                 ft.Row(
@@ -382,7 +463,14 @@ class Save4BucksApp:
                         ft.OutlinedButton(
                             "Refresh",
                             style=ft.ButtonStyle(color=GOLD, side=ft.BorderSide(1.5, GOLD)),
-                            on_click=lambda _e: self.refresh_profiles(),
+                            tooltip="Rescan profiles and known GTA IV installs",
+                            on_click=lambda _e: self.refresh_gate(),
+                        ),
+                        ft.OutlinedButton(
+                            "Browse…",
+                            style=ft.ButtonStyle(color=MUTED, side=ft.BorderSide(1, OUTLINE)),
+                            tooltip="Pick a GTA IV folder manually",
+                            on_click=lambda _e: self.page.run_task(self._browse_install),
                         ),
                         ft.FilledButton(
                             "Continue",
@@ -392,11 +480,97 @@ class Save4BucksApp:
                         ),
                     ],
                     spacing=12,
+                    wrap=True,
                 ),
             ],
-            spacing=14,
-            expand=True,
+            spacing=10,
+            tight=True,
         )
+
+    def refresh_gate(self) -> None:
+        self.refresh_installs()
+        self.refresh_profiles()
+
+    def refresh_installs(self) -> None:
+        load_mod_weapon_names.cache_clear()
+        self._installs = list_gtaiv_installs()
+        last = str(self._settings.get("last_install") or "")
+        if last:
+            last_path = Path(last)
+            if last_path not in self._installs and (
+                (last_path / "GTAIV.exe").is_file()
+                or (last_path / "common" / "data").is_dir()
+            ):
+                self._installs.insert(0, last_path.resolve())
+        labels = [str(p) for p in self._installs]
+        self.install_dd.options = [
+            ft.DropdownOption(key=lab, text=lab) for lab in labels
+        ]
+        if labels:
+            if last in labels:
+                self.install_dd.value = last
+            elif self.install_dd.value not in labels:
+                self.install_dd.value = labels[0]
+            self._apply_selected_install()
+        else:
+            self.install_dd.value = None
+            self.active_install = None
+            self._mod_names = {}
+            self.install_status.value = "No GTA IV install found in known locations."
+        self.page.update()
+
+    def _on_gate_install(self) -> None:
+        self._apply_selected_install()
+        self.page.update()
+
+    def _apply_selected_install(self) -> None:
+        path_str = self.install_dd.value
+        if not path_str:
+            self.active_install = None
+            self._mod_names = {}
+            self.install_status.value = ""
+            return
+        path = Path(path_str)
+        self.active_install = path
+        load_mod_weapon_names.cache_clear()
+        self._mod_names = load_mod_weapon_names(path)
+        info = inspect_install(path)
+        self.install_status.value = info.status_line if info else "Install not readable."
+
+    async def _browse_install(self) -> None:
+        try:
+            picked = await self._file_picker.get_directory_path(
+                dialog_title="Select GTA IV install folder"
+            )
+        except Exception as e:
+            self._alert(APP_NAME, f"Folder picker failed:\n{e}", error=True)
+            return
+        if not picked:
+            return
+        path = Path(picked)
+        # Prefer nested GTAIV/ if user picked the Steam package root
+        nested = path / "GTAIV"
+        if not (path / "GTAIV.exe").is_file() and (nested / "GTAIV.exe").is_file():
+            path = nested
+        if not (
+            (path / "GTAIV.exe").is_file() or (path / "common" / "data").is_dir()
+        ):
+            self._alert(
+                APP_NAME,
+                "That folder does not look like a GTA IV install (need GTAIV.exe or common/data).",
+                error=True,
+            )
+            return
+        path = path.resolve()
+        key = str(path)
+        if path not in self._installs:
+            self._installs.insert(0, path)
+            self.install_dd.options = [
+                ft.DropdownOption(key=str(p), text=str(p)) for p in self._installs
+            ]
+        self.install_dd.value = key
+        self._apply_selected_install()
+        self.page.update()
 
     def refresh_profiles(self) -> None:
         self.profiles = find_profile_dirs()
@@ -468,6 +642,9 @@ class Save4BucksApp:
             self._alert(APP_NAME, f"Cannot use this save:\n{slot.error}", error=True)
             return
         self.active_slot = slot
+        if self.install_dd.value:
+            self._settings["last_install"] = str(self.install_dd.value)
+            self._apply_selected_install()
         self._settings["last_profile"] = path_str
         self._settings["last_slot"] = slot_name
         self._persist_settings()
@@ -538,8 +715,21 @@ class Save4BucksApp:
                     spacing=10,
                 ),
             ],
+            spacing=12,
+            tight=True,
+        )
+
+    def _vitality_cell(self, icon: str, field: ft.TextField) -> ft.Control:
+        return ft.Container(
+            content=ft.Row(
+                [
+                    self._gold_icon(icon, size=22),
+                    field,
+                ],
+                spacing=8,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            ),
             expand=True,
-            spacing=14,
         )
 
     def _build_vitality(self) -> ft.Control:
@@ -547,105 +737,94 @@ class Save4BucksApp:
             [
                 self._back_bar("Vitality"),
                 self.active_chip,
-                _outlined(
-                    ft.Column(
-                        [
-                            ft.Text(
-                                f"Current  {UI_CLAMP_MIN:g}–{UI_CLAMP_MAX:g}",
-                                color=MUTED,
-                                size=12,
+                ft.Row(
+                    [
+                        self._vitality_cell("heart", self.health_field),
+                        self._vitality_cell("shield", self.armour_field),
+                    ],
+                    spacing=12,
+                ),
+                ft.Row(
+                    [
+                        self._vitality_cell("heart", self.max_health_field),
+                        self._vitality_cell("shield", self.max_armour_field),
+                    ],
+                    spacing=12,
+                ),
+                ft.Row(
+                    [
+                        ft.OutlinedButton(
+                            "Max health",
+                            style=ft.ButtonStyle(
+                                color=GOLD, side=ft.BorderSide(1.5, GOLD)
                             ),
-                            ft.Row(
-                                [self.health_field, self.armour_field],
-                                spacing=10,
+                            tooltip=f"Set max health to {UI_MAX_CLAMP}",
+                            on_click=lambda _e: self._vitality_max_health(),
+                        ),
+                        ft.OutlinedButton(
+                            "Max armour",
+                            style=ft.ButtonStyle(
+                                color=GOLD, side=ft.BorderSide(1.5, GOLD)
                             ),
-                            ft.Text(f"Maxima 0–{UI_MAX_CLAMP}", color=MUTED, size=12),
-                            ft.Row(
-                                [
-                                    self.max_health_field,
-                                    self.max_armour_field,
-                                    ft.FilledButton(
-                                        "Reload",
-                                        bgcolor=GREEN,
-                                        color=BTN_ON_GREEN,
-                                        on_click=lambda _e: self._load_vitality_into_ui(),
-                                    ),
-                                    ft.FilledButton(
-                                        "Apply",
-                                        bgcolor=GREEN_HI,
-                                        color=BTN_ON_GREEN,
-                                        on_click=lambda _e: self._apply_vitality(),
-                                    ),
-                                ],
-                                spacing=10,
-                                wrap=True,
+                            tooltip=f"Set max armour to {UI_MAX_CLAMP}",
+                            on_click=lambda _e: self._vitality_max_armour(),
+                        ),
+                        ft.OutlinedButton(
+                            "Tank",
+                            style=ft.ButtonStyle(
+                                color=GOLD, side=ft.BorderSide(1.5, GOLD)
                             ),
-                        ],
-                        spacing=10,
-                    )
+                            tooltip=f"Set all four fields to {UI_MAX_CLAMP}",
+                            on_click=lambda _e: self._vitality_tank(),
+                        ),
+                        ft.Container(expand=True),
+                        ft.FilledButton(
+                            "Reload",
+                            bgcolor=GREEN,
+                            color=BTN_ON_GREEN,
+                            on_click=lambda _e: self._load_vitality_into_ui(),
+                        ),
+                        ft.FilledButton(
+                            "Apply",
+                            bgcolor=GREEN_HI,
+                            color=BTN_ON_GREEN,
+                            on_click=lambda _e: self._apply_vitality(),
+                        ),
+                    ],
+                    spacing=8,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
                 ),
             ],
-            expand=True,
             spacing=12,
+            tight=True,
         )
 
     def _build_settings(self) -> ft.Control:
         return ft.Column(
             [
                 self._back_bar("Settings"),
-                _outlined(
-                    ft.Column(
-                        [
-                            self.autobackup,
-                            self.also_autosave,
-                            ft.Divider(color=OUTLINE, height=24),
-                            ft.Text("Writes", color=GOLD, weight=ft.FontWeight.W_600),
-                            ft.Text(
-                                "PlayerInfo only (money, weapons, vitality). "
-                                "Unsupported save versions are blocked.",
-                                color=MUTED,
-                                size=13,
-                            ),
-                            ft.FilledButton(
-                                "Change save",
-                                bgcolor=GREEN_HI,
-                                color=BTN_ON_GREEN,
-                                on_click=lambda _e: self._goto("gate"),
-                            ),
-                        ],
-                        spacing=12,
-                    )
+                self.autobackup,
+                self.also_autosave,
+                ft.Divider(color=OUTLINE, height=16),
+                ft.Text("Writes", color=GOLD, weight=ft.FontWeight.W_600),
+                ft.Text(
+                    "PlayerInfo only (money, weapons, vitality). "
+                    "Unsupported save versions are blocked.",
+                    color=MUTED,
+                    size=13,
+                ),
+                ft.FilledButton(
+                    "Change save",
+                    bgcolor=GREEN_HI,
+                    color=BTN_ON_GREEN,
+                    on_click=lambda _e: self._goto("gate"),
                 ),
             ],
-            expand=True,
-            spacing=12,
+            spacing=10,
+            tight=True,
         )
 
     # --- weapons UI ---
-
-    def _episode_chip(self, key: str, label: str) -> ft.Control:
-        selected = self._episode == key
-        return ft.Container(
-            content=ft.Text(
-                label,
-                size=12,
-                weight=ft.FontWeight.W_600,
-                color=BTN_ON_GREEN if selected else GOLD,
-            ),
-            bgcolor=GREEN_HI if selected else PANEL,
-            border=ft.Border.all(1.5, GOLD if not selected else GREEN_HI),
-            border_radius=4,
-            padding=ft.Padding.symmetric(horizontal=10, vertical=6),
-            on_click=lambda _e, k=key: self._set_episode(k),
-            ink=True,
-        )
-
-    def _set_episode(self, key: str) -> None:
-        self._episode = key
-        if self._view == "weapons":
-            self.switcher.content = self._build_weapons()
-            self._sync_weapon_card_labels()
-            self.page.update()
 
     def _slot_card(self, index: int) -> ft.Container:
         name_lbl = ft.Text("Empty", size=13, weight=ft.FontWeight.W_600, color=FG)
@@ -653,14 +832,16 @@ class Save4BucksApp:
         ammo = ft.TextField(
             label="Ammo",
             value="0",
-            width=88,
-            height=42,
+            width=78,
+            height=36,
             text_size=12,
+            dense=True,
             border_color=GREEN_HI,
             focused_border_color=FOCUS,
             label_style=ft.TextStyle(color=MUTED, size=10),
             text_style=ft.TextStyle(color=FG, size=12),
             cursor_color=FOCUS,
+            content_padding=ft.Padding.symmetric(horizontal=8, vertical=4),
         )
         self._slot_name_labels.append(name_lbl)
         self._slot_badge_labels.append(badge)
@@ -672,35 +853,41 @@ class Save4BucksApp:
                     ft.Row(
                         [
                             ft.Text(f"#{index}", size=11, color=MUTED),
+                            name_lbl,
                             ft.Container(expand=True),
                             badge,
-                        ]
+                        ],
+                        spacing=6,
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
                     ),
-                    name_lbl,
                     ft.Row(
                         [
                             ft.OutlinedButton(
                                 "Pick",
-                                height=32,
+                                height=30,
                                 style=ft.ButtonStyle(
-                                    color=GOLD, side=ft.BorderSide(1, GOLD)
+                                    color=GOLD,
+                                    side=ft.BorderSide(1, GOLD),
+                                    padding=ft.Padding.symmetric(horizontal=10, vertical=0),
                                 ),
                                 on_click=lambda _e, i=index: self._open_weapon_picker(i),
                             ),
+                            ft.Container(expand=True),
                             ammo,
                         ],
                         spacing=6,
                         vertical_alignment=ft.CrossAxisAlignment.CENTER,
                     ),
                 ],
-                spacing=4,
+                spacing=6,
                 tight=True,
             ),
             bgcolor=PANEL,
             border=ft.Border.all(1.5, OUTLINE),
             border_radius=6,
-            padding=10,
+            padding=ft.Padding.symmetric(horizontal=10, vertical=8),
             expand=True,
+            height=72,
             ink=True,
             on_click=lambda _e, i=index: self._mark_equipped(i),
         )
@@ -730,26 +917,14 @@ class Save4BucksApp:
                 ft.Row(
                     [self._slot_card(r * 2), self._slot_card(r * 2 + 1)],
                     spacing=10,
-                    expand=True,
                 )
             )
-        strip = ft.Row(
-            [
-                self._episode_chip("iv", "IV"),
-                self._episode_chip("tlad", "TLAD"),
-                self._episode_chip("tbogt", "TBoGT"),
-                self._episode_chip("all", "All"),
-                self._episode_chip("mods", "Mods"),
-            ],
-            spacing=8,
-            wrap=True,
-        )
+        grid = ft.Column(rows, spacing=6, tight=True)
         return ft.Column(
             [
                 self._back_bar("Weapons"),
                 self.active_chip,
-                strip,
-                ft.Column(rows, spacing=8, expand=True, scroll=ft.ScrollMode.AUTO),
+                grid,
                 ft.Row(
                     [
                         ft.FilledButton(
@@ -779,8 +954,8 @@ class Save4BucksApp:
                     wrap=True,
                 ),
             ],
-            expand=True,
-            spacing=10,
+            spacing=8,
+            tight=True,
         )
 
     def _open_weapon_picker(self, index: int) -> None:
@@ -795,38 +970,61 @@ class Save4BucksApp:
         )
         list_col = ft.Column(spacing=2, scroll=ft.ScrollMode.AUTO, height=280)
         custom = ft.TextField(
-            label="Custom ID",
-            visible=self._episode == "mods",
+            label="Custom / mod ID",
             border_color=GREEN_HI,
             focused_border_color=FOCUS,
             label_style=ft.TextStyle(color=MUTED),
             text_style=ft.TextStyle(color=FG),
             cursor_color=FOCUS,
+            tooltip="Use for mod weapons not in the stock list",
         )
 
         def fill(query: str = "") -> None:
             list_col.controls.clear()
             q = (query or "").lower().strip()
-            if self._episode == "mods":
+            stock_ids = {wid for _, wid in picker_options("all")}
+            for label, wid in picker_options("all"):
+                if q and q not in label.lower() and q not in str(wid):
+                    continue
+
+                def pick(_e: ft.ControlEvent, w: int = wid) -> None:
+                    self._apply_picked_weapon(w)
+                    self.page.pop_dialog()
+
                 list_col.controls.append(
-                    ft.Text("Enter a custom weapon ID below.", color=MUTED, size=12)
-                )
-            else:
-                for label, wid in picker_options(self._episode):
-                    if q and q not in label.lower() and q not in str(wid):
-                        continue
-
-                    def pick(_e: ft.ControlEvent, w: int = wid) -> None:
-                        self._apply_picked_weapon(w)
-                        self.page.pop_dialog()
-
-                    list_col.controls.append(
-                        ft.ListTile(
-                            title=ft.Text(label, color=FG, size=13),
-                            dense=True,
-                            on_click=pick,
-                        )
+                    ft.ListTile(
+                        title=ft.Text(label, color=FG, size=13),
+                        dense=True,
+                        on_click=pick,
                     )
+                )
+            # Named mod weapons from the selected GTA IV install.
+            for wid, name in sorted(self._mod_names.items()):
+                if wid in stock_ids:
+                    continue
+                label = f"{name}  ·  {wid}  ·  mod"
+                if q and q not in label.lower() and q not in str(wid):
+                    continue
+
+                def pick_mod(_e: ft.ControlEvent, w: int = wid) -> None:
+                    self._apply_picked_weapon(w)
+                    self.page.pop_dialog()
+
+                list_col.controls.append(
+                    ft.ListTile(
+                        title=ft.Text(label, color=GOLD, size=13),
+                        dense=True,
+                        on_click=pick_mod,
+                    )
+                )
+            if not list_col.controls:
+                list_col.controls.append(
+                    ft.Text(
+                        "No matches — enter a custom / mod ID below.",
+                        color=MUTED,
+                        size=12,
+                    )
+                )
             self.page.update()
 
         def on_search(_e: ft.ControlEvent) -> None:
@@ -848,17 +1046,6 @@ class Save4BucksApp:
         def close(_e: ft.ControlEvent) -> None:
             self.page.pop_dialog()
 
-        actions = [
-            ft.TextButton("Cancel", on_click=close, style=ft.ButtonStyle(color=MUTED)),
-        ]
-        if self._episode == "mods":
-            actions.insert(
-                0,
-                ft.TextButton(
-                    "Use ID", on_click=use_custom, style=ft.ButtonStyle(color=GOLD)
-                ),
-            )
-
         self.page.show_dialog(
             ft.AlertDialog(
                 modal=True,
@@ -870,7 +1057,16 @@ class Save4BucksApp:
                     spacing=8,
                     width=360,
                 ),
-                actions=actions,
+                actions=[
+                    ft.TextButton(
+                        "Use ID",
+                        on_click=use_custom,
+                        style=ft.ButtonStyle(color=GOLD),
+                    ),
+                    ft.TextButton(
+                        "Cancel", on_click=close, style=ft.ButtonStyle(color=MUTED)
+                    ),
+                ],
                 actions_alignment=ft.MainAxisAlignment.END,
             )
         )
@@ -880,21 +1076,28 @@ class Save4BucksApp:
         if idx is None or idx < 0 or idx >= WEAPON_SLOT_COUNT:
             return
         self._weapon_ids[idx] = wid
+        if wid == 0 and idx < len(self._ammo_fields):
+            self._ammo_fields[idx].value = "0"
         self._sync_weapon_card_labels()
         self.page.update()
 
     def _sync_weapon_card_labels(self) -> None:
         for i in range(min(len(self._slot_name_labels), WEAPON_SLOT_COUNT)):
             wid = self._weapon_ids[i]
-            det = classify_weapon(wid)
+            det = classify_weapon(wid, mod_names=self._mod_names)
             if wid == 0:
                 self._slot_name_labels[i].value = "Empty"
                 self._slot_badge_labels[i].value = ""
+                if i < len(self._ammo_fields):
+                    self._ammo_fields[i].value = "0"
+                    self._ammo_fields[i].disabled = True
             else:
                 self._slot_name_labels[i].value = (
                     short_name(wid) if det.kind == "stock" else det.name
                 )
                 self._slot_badge_labels[i].value = det.kind
+                if i < len(self._ammo_fields):
+                    self._ammo_fields[i].disabled = False
             self._slot_badge_labels[i].color = (
                 GREEN_HI
                 if det.kind == "stock"
@@ -916,13 +1119,20 @@ class Save4BucksApp:
         self._weapon_ids = list(loadout.weapon_ids)
         self._equipped_slot = int(loadout.current_slot) if loadout.current_slot < WEAPON_SLOT_COUNT else 0
         for i, ammo_f in enumerate(self._ammo_fields):
-            ammo_f.value = str(loadout.ammo[i])
+            # Empty slots never show/store ammo
+            ammo_f.value = "0" if self._weapon_ids[i] == 0 else str(loadout.ammo[i])
         self._sync_weapon_card_labels()
         self.page.update()
 
     def _collect_weapons(self) -> tuple[list[int], list[int]] | None:
+        while len(self._weapon_ids) < WEAPON_SLOT_COUNT:
+            self._weapon_ids.append(0)
         ammo: list[int] = []
         for i, ammo_f in enumerate(self._ammo_fields):
+            if self._weapon_ids[i] == 0:
+                ammo.append(0)
+                ammo_f.value = "0"
+                continue
             raw = (ammo_f.value or "0").strip()
             try:
                 a = int(raw)
@@ -933,13 +1143,14 @@ class Save4BucksApp:
                 self._alert(APP_NAME, f"Slot {i}: ammo must be 0..65535.", error=True)
                 return None
             ammo.append(a)
-        while len(self._weapon_ids) < WEAPON_SLOT_COUNT:
-            self._weapon_ids.append(0)
         return list(self._weapon_ids[:WEAPON_SLOT_COUNT]), ammo
 
     def _max_ammo(self) -> None:
-        for f in self._ammo_fields:
-            f.value = "9999"
+        for i, f in enumerate(self._ammo_fields):
+            if i < len(self._weapon_ids) and self._weapon_ids[i] != 0:
+                f.value = "9999"
+            else:
+                f.value = "0"
         self.page.update()
 
     def _clear_empty_slots(self) -> None:
@@ -1184,6 +1395,23 @@ class Save4BucksApp:
         self.armour_field.value = f"{v.armour:.1f}"
         self.max_health_field.value = str(v.max_health)
         self.max_armour_field.value = str(v.max_armour)
+        self.page.update()
+
+    def _vitality_max_health(self) -> None:
+        self.max_health_field.value = str(UI_MAX_CLAMP)
+        self.page.update()
+
+    def _vitality_max_armour(self) -> None:
+        self.max_armour_field.value = str(UI_MAX_CLAMP)
+        self.page.update()
+
+    def _vitality_tank(self) -> None:
+        """Set current and maxima health/armour to the game max dword."""
+        cap = str(UI_MAX_CLAMP)
+        self.health_field.value = cap
+        self.armour_field.value = cap
+        self.max_health_field.value = cap
+        self.max_armour_field.value = cap
         self.page.update()
 
     def _apply_vitality(self) -> None:
