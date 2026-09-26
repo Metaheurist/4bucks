@@ -150,12 +150,12 @@ def check_write(path: Path, data: bytes | None = None, *, allow_non_ce_path: boo
         return WriteCheck(
             identity,
             False,
-            "GFWL/LocalAppData save path — not supported (Complete Edition Profiles only)",
+            "GFWL/LocalAppData save path - not supported (Complete Edition Profiles only)",
         )
     if identity.profile_kind != ProfileKind.CE_PROFILES:
         msg = f"Non-CE profile path ({identity.profile_kind.value})"
         if allow_non_ce_path:
-            warnings.append(msg + " — writing anyway")
+            warnings.append(msg + " - writing anyway")
         else:
             return WriteCheck(identity, False, msg + ". Confirm to force, or move to CE Profiles.")
 

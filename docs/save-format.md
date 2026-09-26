@@ -1,8 +1,8 @@
 # Save format (money)
 
-Based on [GTAMods Wiki — Saves (GTA 4)](https://gtamods.com/wiki/Saves_(GTA_4)) and local CE verification.
+Based on [GTAMods Wiki - Saves (GTA 4)](https://gtamods.com/wiki/Saves_(GTA_4)) and local CE verification.
 
-## Metadata (`0x00`–`0x10F`)
+## Metadata (`0x00`-`0x10F`)
 
 | Offset | Type | Field |
 |--------|------|-------|

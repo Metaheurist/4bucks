@@ -34,7 +34,7 @@ flowchart TB
 1. Quit GTA IV completely.
 2. Open **Save 4Bucks**.
 3. Pick your Rockstar **Profile**.
-4. Select a slot — status chip shows save version / path / OK to edit.
+4. Select a slot - status chip shows save version / path / OK to edit.
 5. Enter an amount → **Set money** or **Add money**.
 6. Optional: Autobackup (default on), Also apply to autosave (`SGTA412`).
 7. Start the game and load that save.
@@ -67,7 +67,7 @@ If either copy fails, the money write is **aborted**.
 | File | Meaning |
 |------|---------|
 | `SGTA400` | Manual slot 1 |
-| `SGTA401`–`SGTA411` | Slots 2–12 |
+| `SGTA401`-`SGTA411` | Slots 2-12 |
 | `SGTA412` | Autosave (IV) |
 | `SGTA413` / `SGTA414` | TLAD / TBoGT autosave |
 

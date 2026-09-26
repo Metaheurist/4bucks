@@ -1,4 +1,4 @@
-"""Save 4Bucks — tkinter UI for GTA IV CE save money editing."""
+"""Save 4Bucks - tkinter UI for GTA IV CE save money editing."""
 
 from __future__ import annotations
 
@@ -191,7 +191,7 @@ class Save4BucksApp(tk.Tk):
             if current not in labels:
                 self.profile_var.set(labels[0])
             self.load_slots()
-            self.set_status(f"Found {len(self.profiles)} profile(s). Save editor only — close GTAIV.exe before writing.")
+            self.set_status(f"Found {len(self.profiles)} profile(s). Save editor only - close GTAIV.exe before writing.")
         else:
             self.profile_var.set("")
             self.tree.delete(*self.tree.get_children())

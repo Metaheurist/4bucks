@@ -1,4 +1,4 @@
-# Build Save 4Bucks — Windows onefile EXE (x64 and/or x86)
+# Build Save 4Bucks - Windows onefile EXE (x64 and/or x86)
 param(
     [switch]$SkipChecks,
     [ValidateSet('All', 'x64', 'x86')]
@@ -55,7 +55,7 @@ function Resolve-PythonX86 {
 
     throw @'
 No 32-bit Python found. Install Python 3.11 x86 from python.org, or pass -PythonX86.
-PyInstaller bitness matches the interpreter — a 64-bit Python cannot produce a 32-bit EXE.
+PyInstaller bitness matches the interpreter - a 64-bit Python cannot produce a 32-bit EXE.
 '@
 }
 

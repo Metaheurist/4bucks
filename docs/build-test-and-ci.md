@@ -44,7 +44,7 @@ Bot version commits use `[skip ci]` so they do not re-trigger another release.
 App SemVer lives in [`src/__init__.py`](../src/__init__.py) (`__version__`).  
 CI bumps the **patch** with [`scripts/ci/bump_version.py`](../scripts/ci/bump_version.py) on each release.
 
-Savegame format allowlisting (v57) is separate — see [versioning.md](versioning.md).
+Savegame format allowlisting (v57) is separate - see [versioning.md](versioning.md).
 
 ### Permissions
 
@@ -59,4 +59,4 @@ The release job needs `contents: write` (default `GITHUB_TOKEN` is enough unless
 | “No profiles found” | Saves under Documents (often OneDrive) |
 | Icon missing | Confirm `assets\icon.ico` before build |
 | No 32-bit Python | Install Python 3.11 Windows **32-bit**, or pass `-PythonX86` |
-| Wrong bitness EXE | PyInstaller matches the interpreter — use x86 Python for `-Arch x86` |
+| Wrong bitness EXE | PyInstaller matches the interpreter - use x86 Python for `-Arch x86` |

@@ -31,4 +31,4 @@ Covers:
 .\.venv\Scripts\python.exe -m pip_audit -r requirements-dev.txt
 ```
 
-`build.ps1` runs pytest + pip-audit before packing. CI also runs Gitleaks — see **[build-test-and-ci.md](build-test-and-ci.md)**.
+`build.ps1` runs pytest + pip-audit before packing. CI also runs Gitleaks - see **[build-test-and-ci.md](build-test-and-ci.md)**.

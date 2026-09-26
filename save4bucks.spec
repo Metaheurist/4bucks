@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""PyInstaller spec — EXE name/arch from SAVE4BUCKS_ARCH (x64|x86)."""
+"""PyInstaller spec - EXE name/arch from SAVE4BUCKS_ARCH (x64|x86)."""
 import os
 from pathlib import Path
 

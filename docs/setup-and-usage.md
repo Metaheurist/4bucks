@@ -53,5 +53,5 @@ Details: **[build-test-and-ci.md](build-test-and-ci.md)**.
 
 - Close `GTAIV.exe` before writing.
 - If profiles are missing, launch CE once and save.
-- OneDrive may host Documents — that is normal for CE.
+- OneDrive may host Documents - that is normal for CE.
 - Antivirus may quarantine PyInstaller EXEs; exclude `dist\` if needed.

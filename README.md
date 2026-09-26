@@ -1,12 +1,12 @@
 # Save 4Bucks - GTA IV CE save money editor
 
-**Save 4Bucks** is a Windows desktop tool that edits **cash** in Grand Theft Auto IV **Complete Edition** save files (`SGTA4xx`). It is an **offline save editor only** — no process memory, no injection, no live godmode/weapons.
+**Save 4Bucks** is a Windows desktop tool that edits **cash** in Grand Theft Auto IV **Complete Edition** save files (`SGTA4xx`). It is an **offline save editor only** - no process memory, no injection, no live godmode/weapons.
 
-**Latest changes:** **[CHANGELOG.md](CHANGELOG.md)** (current **v1.1.0** — dual-arch x64/x86 builds, GitHub Actions release pipeline, docs hub).
+**Latest changes:** **[CHANGELOG.md](CHANGELOG.md)** (current **v1.1.0** - dual-arch x64/x86 builds, GitHub Actions release pipeline, docs hub).
 
 ### Here's what we plan next
 
-**[docs/next-phase-development-plan.md](docs/next-phase-development-plan.md)** — optional UX polish, broader CE verification notes, and packaging improvements. Shipped work is in the **[changelog](docs/CHANGELOG.md)** and **[app overview](docs/app-and-features.md)**.
+**[docs/next-phase-development-plan.md](docs/next-phase-development-plan.md)** - optional UX polish, broader CE verification notes, and packaging improvements. Shipped work is in the **[changelog](docs/CHANGELOG.md)** and **[app overview](docs/app-and-features.md)**.
 
 ### Tech stack
 
@@ -70,19 +70,19 @@ Long-form sections live under **`docs/`** so the main README stays short. Open t
 
 | | |
 | :--- | :--- |
-| <img src="docs/icons/lock.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Security](docs/SECURITY.md)** — offline threat model, CVE gates, what we do not do |
-| <img src="docs/icons/home.svg" width="32" height="32" alt="" aria-hidden="true"> | **[App overview & features](docs/app-and-features.md)** — UI flow, autobackup, save slots, CLI |
-| <img src="docs/icons/settings.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Installation & usage](docs/setup-and-usage.md)** — venv, run from source, dual-arch EXE build |
-| <img src="docs/icons/flask.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Testing & configuration](docs/testing-and-configuration.md)** — pytest, pip-audit, manual checklist |
-| <img src="docs/icons/timer.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Build, test & CI](docs/build-test-and-ci.md)** — `build.ps1`, Actions, SemVer releases |
-| <img src="docs/icons/folder.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Architecture](docs/architecture.md)** — module map and write path |
-| <img src="docs/icons/clipboard.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Save format](docs/save-format.md)** — BLOCK / money offsets |
-| <img src="docs/icons/shield.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Savegame versioning](docs/versioning.md)** — allowlist / refuse rules (CE v57) |
-| <img src="docs/icons/paperclip.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Known issues](docs/known-issues.md)** — OneDrive, autosave episodes, Steam pitfalls |
-| <img src="docs/icons/brain.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Research notes](docs/research.md)** — GTAMods / GTASnP / forum sources |
-| <img src="docs/icons/folder.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Project reference](docs/project-reference.md)** — tree, deps, troubleshooting |
-| <img src="docs/icons/scroll.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Changelog](docs/CHANGELOG.md)** — version history and release notes |
-| <img src="docs/icons/rocket.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Next phase plan](docs/next-phase-development-plan.md)** — upcoming improvements |
+| <img src="docs/icons/lock.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Security](docs/SECURITY.md)** - offline threat model, CVE gates, what we do not do |
+| <img src="docs/icons/home.svg" width="32" height="32" alt="" aria-hidden="true"> | **[App overview & features](docs/app-and-features.md)** - UI flow, autobackup, save slots, CLI |
+| <img src="docs/icons/settings.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Installation & usage](docs/setup-and-usage.md)** - venv, run from source, dual-arch EXE build |
+| <img src="docs/icons/flask.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Testing & configuration](docs/testing-and-configuration.md)** - pytest, pip-audit, manual checklist |
+| <img src="docs/icons/timer.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Build, test & CI](docs/build-test-and-ci.md)** - `build.ps1`, Actions, SemVer releases |
+| <img src="docs/icons/folder.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Architecture](docs/architecture.md)** - module map and write path |
+| <img src="docs/icons/clipboard.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Save format](docs/save-format.md)** - BLOCK / money offsets |
+| <img src="docs/icons/shield.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Savegame versioning](docs/versioning.md)** - allowlist / refuse rules (CE v57) |
+| <img src="docs/icons/paperclip.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Known issues](docs/known-issues.md)** - OneDrive, autosave episodes, Steam pitfalls |
+| <img src="docs/icons/brain.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Research notes](docs/research.md)** - GTAMods / GTASnP / forum sources |
+| <img src="docs/icons/folder.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Project reference](docs/project-reference.md)** - tree, deps, troubleshooting |
+| <img src="docs/icons/scroll.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Changelog](docs/CHANGELOG.md)** - version history and release notes |
+| <img src="docs/icons/rocket.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Next phase plan](docs/next-phase-development-plan.md)** - upcoming improvements |
 | <img src="docs/icons/user.svg" width="32" height="32" alt="" aria-hidden="true"> | **[About & support](docs/about-and-support.md)** |
 
 Supported saves: CE with `SAVEGAME_VERSION_NUMBER` **57** (e.g. `1.2.0.59`). Close **GTAIV.exe** before writing.
