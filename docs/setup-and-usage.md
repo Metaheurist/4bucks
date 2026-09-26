@@ -54,4 +54,5 @@ Details: **[build-test-and-ci.md](build-test-and-ci.md)**.
 - Close `GTAIV.exe` before writing.
 - If profiles are missing, launch CE once and save.
 - OneDrive may host Documents - that is normal for CE.
-- Antivirus may quarantine PyInstaller EXEs; exclude `dist\` if needed.
+- Antivirus may quarantine `flet pack` EXEs; exclude `dist\` if needed.
+- First run from source needs a working Flet desktop client (`pip install -r requirements.txt`).

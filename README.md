@@ -2,7 +2,7 @@
 
 **Save 4Bucks** is a Windows desktop tool that edits **cash** in Grand Theft Auto IV **Complete Edition** save files (`SGTA4xx`). It is an **offline save editor only** - no process memory, no injection, no live godmode/weapons.
 
-**Latest changes:** **[CHANGELOG.md](CHANGELOG.md)** (current **v1.2.0** - Flet/Flutter UI, dual-arch pack, docs hub).
+**Latest changes:** **[CHANGELOG.md](CHANGELOG.md)** (current **v1.2.0** - Flet 1.0 UI, `flet pack` dual-arch EXEs, GTA IV-style docs/tech-stack icons, CI hardening).
 
 ### Here's what I plan next
 
@@ -18,7 +18,7 @@
 <td>
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
-[![Flet](https://img.shields.io/badge/UI-Flet%20(Flutter)-02569B?style=flat-square&logo=flutter&logoColor=white)](https://flet.dev/)
+[![Flet](https://img.shields.io/badge/UI-Flet%201.0.1%20(Flutter)-02569B?style=flat-square&logo=flutter&logoColor=white)](https://flet.dev/)
 [![Windows](https://img.shields.io/badge/Windows-10%2F11-0078D6?style=flat-square&logo=windows&logoColor=white)](https://www.microsoft.com/windows)
 
 </td>
@@ -72,7 +72,7 @@ Latest: [Releases](https://github.com/Metaheurist/4bucks/releases) · [Actions](
 
 ### Documentation
 
-Long-form sections live under **`docs/`** so the main README stays short. Open them from the repo’s file tree or use the links below. Icons are SVG assets under [`docs/icons/`](docs/icons/) in a **GTA IV phone-menu** style (dark tile + Liberty City gold).
+Long-form sections live under **`docs/`** so the main README stays short. Open them from the repo’s file tree or use the links below. Icons under [`docs/icons/`](docs/icons/) use a **GTA IV phone-menu** style (dark tile + Liberty City gold) for both the documentation hub and the tech-stack category labels.
 
 | | |
 | :--- | :--- |

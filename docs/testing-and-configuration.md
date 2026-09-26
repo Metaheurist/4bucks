@@ -19,10 +19,13 @@ Covers:
 ### Manual checklist
 
 1. Quit GTA IV.
-2. Note HUD money on a manual slot.
-3. Set money in Save 4Bucks; confirm chip `v57 · OK to edit`.
-4. Confirm `SGTA4xx.backup` beside save and a file under `backups\`.
-5. Load slot in-game; verify cash.
+2. From source: `python -m src` (Flet window) **or** launch `dist\Save4Bucks-x64.exe`.
+3. Note HUD money on a manual slot.
+4. Set money in Save 4Bucks; confirm chip `v57 · OK to edit`.
+5. Confirm `SGTA4xx.backup` beside save and a file under `backups\`.
+6. Load slot in-game; verify cash.
+
+Unit tests do **not** drive the Flet UI - they cover save/backup/version logic only.
 
 ### pip-audit
 

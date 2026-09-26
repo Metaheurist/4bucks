@@ -2,7 +2,7 @@
 
 ## 🏠 App overview
 
-**Standing:** Offline Windows save editor for GTA IV **Complete Edition** Profiles (`SGTA4xx`). App SemVer **v1.1.0** · supported savegame version **57** · dual-arch EXE (x64 / x86).
+**Standing:** Offline Windows save editor for GTA IV **Complete Edition** Profiles (`SGTA4xx`). App SemVer **v1.2.0** · UI **Flet 1.0** (Flutter) · supported savegame version **57** · dual-arch EXE (x64 / x86 via `flet pack`).
 
 ```mermaid
 %%{init: {'flowchart': {'useMaxWidth': true}}}%%

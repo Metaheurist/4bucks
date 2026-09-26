@@ -34,7 +34,11 @@ flowchart LR
 
 ## App directory
 
-- Frozen EXE: folder containing `Save4Bucks-x64.exe` / `Save4Bucks-x86.exe`
+- Frozen EXE: folder containing `Save4Bucks-x64.exe` / `Save4Bucks-x86.exe` (from `flet pack`)
 - Source: repo root (`4bucks/`)
 
 Used for `backups/` and `save4bucks_settings.json`.
+
+## UI stack
+
+The window is a **Flet** app (`ft.run` in `src/app.py`) with a dark Liberty City palette. Core save logic stays in pure Python modules so CLI and tests do not need Flet.

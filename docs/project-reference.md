@@ -7,14 +7,14 @@ Tree, dependencies, and troubleshooting for contributors.
 ```text
 4bucks/
   assets/           App icons (png/ico)
-  docs/             Long-form documentation + icons/
+  docs/             Long-form docs + GTA IV-style icons/
   scripts/ci/       Version bump for Actions
-  src/              Application package
+  src/              Application package (Flet UI in app.py)
   tests/unit/       pytest suite
-  .github/workflows CI
-  build.ps1         Dual-arch PyInstaller
-  save4bucks.spec
-  save4bucks.py     EXE entry
+  .github/workflows CI (ubuntu-24.04 + windows dual-arch release)
+  build.ps1         Dual-arch flet pack
+  save4bucks.spec   Legacy PyInstaller spec (optional / reference)
+  save4bucks.py     EXE / flet pack entry
   requirements*.txt
 ```
 
@@ -22,10 +22,10 @@ Tree, dependencies, and troubleshooting for contributors.
 
 | File | Role |
 |------|------|
-| `requirements.txt` | Flet, PyInstaller, Pillow (UI + packaging) |
+| `requirements.txt` | **Flet 1.0.1**, PyInstaller, Pillow (UI + packaging) |
 | `requirements-dev.txt` | pytest, pip-audit (+ runtime via `-r`) |
 
-UI uses **Flet** (Flutter for Python). Runtime editing code otherwise has no third-party imports beyond the frozen build toolchain.
+UI uses **Flet** (Flutter for Python). Save editing modules (`detect`, `versioning`, `save_money`, `backup`, `settings`) stay stdlib-only aside from the frozen UI/packaging stack.
 
 ## Troubleshooting
 

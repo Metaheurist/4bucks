@@ -4,8 +4,11 @@ Canonical notes: **[docs/CHANGELOG.md](docs/CHANGELOG.md)**.
 
 ## v1.2.0
 
-- UI redesigned on **Flet** (Flutter for Python); packaging via `flet pack`.
-- Docs: first-person "I" wording; hub icons remain GTA IV phone-menu style.
+- UI redesigned on **Flet 1.0** (Flutter for Python) with the Liberty City dark/gold theme.
+- Packaging via **`flet pack`** (PyInstaller under the hood) for `Save4Bucks-x64.exe` / `Save4Bucks-x86.exe`.
+- Docs hub + tech-stack category icons in **GTA IV phone-menu** style (dark tile + gold SVGs); no emoji category labels.
+- First-person wording ("I") across README/docs; ASCII hyphens instead of em dashes.
+- CI hardening: Gitleaks allowlist for README/docs false positives; Linux jobs on **ubuntu-24.04**; release job rebases/retries version-bump push and tolerates existing tags/releases.
 
 ## v1.1.0
 
