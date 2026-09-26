@@ -7,9 +7,13 @@ title = "Save 4Bucks"
 useDefault = true
 
 [allowlist]
-description = "Local venvs, build outputs, caches, and dependency trees"
+description = "README/docs badges and examples; local venvs, build outputs, caches"
 paths = [
+  '''^README\.md$''',
+  '''^CHANGELOG\.md$''',
+  '''^docs/''',
   '''^\.venv/''',
+  '''^\.venv-x86/''',
   '''^venv/''',
   '''^ENV/''',
   '''^dist/''',
