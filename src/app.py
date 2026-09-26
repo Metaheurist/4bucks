@@ -1,4 +1,4 @@
-"""4Bucks - multi-view Flet UI for GTA IV CE PlayerInfo editing."""
+"""4Bucks - multi-view Flet UI for GTA IV CE PlayerInfo + Garages editing."""
 
 from __future__ import annotations
 
@@ -10,6 +10,17 @@ import flet as ft
 from . import APP_NAME, __version__
 from .detect import SaveSlot, find_profile_dirs, is_gtaiv_running, list_slots
 from .playerinfo import WEAPON_SLOT_COUNT
+from .safehouse_parking import SAFEHOUSES
+from .save_garage import (
+    FLAG_VALID,
+    STORED_CAR_COUNT,
+    StoredCar,
+    list_safehouse_slots,
+    proofs_to_flags,
+    read_stored_cars_file,
+    spawn_at_safehouse,
+    update_stored_car,
+)
 from .save_money import add_money, set_money
 from .save_vitality import (
     UI_CLAMP_MAX,
@@ -20,6 +31,7 @@ from .save_vitality import (
 )
 from .save_weapons import read_loadout_file, write_loadout
 from .settings import load_settings, save_settings
+from .vehicles_catalog import list_vehicles, vehicle_name
 from .versioning import check_write, inspect_save, status_chip
 from .weapon_detect import (
     classify_weapon,
@@ -45,12 +57,14 @@ BTN_ON_GREEN = "#12161a"
 # Sized to content — no scrollbars. Includes brand + status chrome.
 WINDOW_SIZES: dict[str, tuple[int, int]] = {
     "gate": (640, 540),
-    "menu": (640, 480),
+    "menu": (560, 560),
     "money": (600, 290),
     "weapons": (780, 680),
     "vitality": (620, 360),
+    "garage": (720, 560),
     "settings": (560, 420),
 }
+
 
 
 def _resource_path(*parts: str) -> Path:
@@ -91,6 +105,11 @@ class Save4BucksApp:
         self._slot_badge_labels: list[ft.Text] = []
         self._slot_cards: list[ft.Container] = []
         self._picker_slot: int | None = None
+        self._garage_safehouse = SAFEHOUSES[0].id
+        self._garage_draft: list[StoredCar | None] = [None] * STORED_CAR_COUNT
+        self._vehicle_picker_spot: tuple[str, int] | None = None  # safehouse, spot
+        self._vehicle_picker_mode: str = "edit"  # edit | spawn
+        self._vehicle_picker_car_index: int | None = None
 
         page.title = f"{APP_NAME} v{__version__}"
         page.theme_mode = ft.ThemeMode.DARK
@@ -298,7 +317,14 @@ class Save4BucksApp:
             self._continue_from_gate()
             return
         if self._view == "menu" and not e.ctrl and not e.alt and not e.meta:
-            mapping = {"1": "money", "2": "weapons", "3": "vitality", "4": "settings"}
+            mapping = {
+                "1": "money",
+                "2": "weapons",
+                "3": "vitality",
+                "4": "garage",
+                "5": "settings",
+                "s": "settings",
+            }
             if key in mapping:
                 self._goto(mapping[key])
 
@@ -330,6 +356,7 @@ class Save4BucksApp:
             "money": self._build_money,
             "weapons": self._build_weapons,
             "vitality": self._build_vitality,
+            "garage": self._build_garage,
             "settings": self._build_settings,
         }
         self.switcher.content = builders[view]()
@@ -337,7 +364,9 @@ class Save4BucksApp:
             self._load_weapons_into_ui()
         elif view == "vitality":
             self._load_vitality_into_ui()
-        elif view in ("money", "weapons", "vitality", "menu"):
+        elif view == "garage":
+            self._load_garage_into_ui()
+        elif view in ("money", "weapons", "vitality", "garage", "menu"):
             self._refresh_active_chip()
         self._fit_window(view)
         self.page.update()
@@ -400,40 +429,166 @@ class Save4BucksApp:
             height=118,
         )
 
+    def _wheel_tile(
+        self,
+        title: str,
+        blurb: str,
+        view: str,
+        shortcut: str,
+        *,
+        icon: str,
+        size: int = 108,
+    ) -> ft.Control:
+        tip = f"{title} - {blurb}. Press {shortcut}."
+        return ft.Container(
+            content=ft.OutlinedButton(
+                content=ft.Column(
+                    [
+                        self._menu_icon(icon),
+                        ft.Text(title, size=13, weight=ft.FontWeight.W_600, color=GOLD),
+                    ],
+                    spacing=4,
+                    tight=True,
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                    alignment=ft.MainAxisAlignment.CENTER,
+                ),
+                style=ft.ButtonStyle(
+                    bgcolor=PANEL,
+                    side=ft.BorderSide(1.5, GOLD),
+                    shape=ft.RoundedRectangleBorder(radius=size // 2),
+                    padding=ft.Padding.all(10),
+                    overlay_color="#e0c04a33",
+                ),
+                tooltip=tip,
+                width=size,
+                height=size,
+                on_click=lambda _e, v=view: self._goto(v),
+            ),
+            width=size,
+            height=size,
+            animate=ft.Animation(180, ft.AnimationCurve.EASE_OUT),
+            animate_scale=ft.Animation(180, ft.AnimationCurve.EASE_OUT),
+            scale=1.0,
+            on_hover=lambda e, c=None: self._wheel_hover(e),
+        )
+
+    def _wheel_hover(self, e: ft.ControlEvent) -> None:
+        ctrl = e.control
+        try:
+            ctrl.scale = 1.06 if e.data == "true" else 1.0
+            ctrl.update()
+        except Exception:
+            pass
+
+    def _wheel_center_settings(self, *, size: int = 96) -> ft.Control:
+        tip = "Settings - Backup and options. Press 5 or S."
+        return ft.Container(
+            content=ft.OutlinedButton(
+                content=ft.Column(
+                    [
+                        self._menu_icon("settings"),
+                        ft.Text("Settings", size=12, weight=ft.FontWeight.W_600, color=GOLD),
+                    ],
+                    spacing=2,
+                    tight=True,
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                    alignment=ft.MainAxisAlignment.CENTER,
+                ),
+                style=ft.ButtonStyle(
+                    bgcolor="#243028",
+                    side=ft.BorderSide(2, GOLD),
+                    shape=ft.RoundedRectangleBorder(radius=size // 2),
+                    padding=ft.Padding.all(8),
+                    overlay_color="#e0c04a44",
+                ),
+                tooltip=tip,
+                width=size,
+                height=size,
+                on_click=lambda _e: self._goto("settings"),
+            ),
+            width=size,
+            height=size,
+            animate_scale=ft.Animation(160, ft.AnimationCurve.EASE_OUT),
+            scale=1.0,
+            on_hover=lambda e: self._wheel_hover(e),
+        )
+
     def _build_menu(self) -> ft.Control:
+        wheel = 400
+        tile = 108
+        center = 96
+        mid = (wheel - tile) / 2
+        cmid = (wheel - center) / 2
+        stack = ft.Stack(
+            [
+                # Outer ring: Money N, Weapons E, Vitality S, Garage W
+                ft.Container(
+                    content=self._wheel_tile(
+                        "Money", "Set or add cash", "money", "1", icon="money", size=tile
+                    ),
+                    left=mid,
+                    top=8,
+                    width=tile,
+                    height=tile,
+                ),
+                ft.Container(
+                    content=self._wheel_tile(
+                        "Weapons",
+                        "Guns and ammo",
+                        "weapons",
+                        "2",
+                        icon="weapons",
+                        size=tile,
+                    ),
+                    left=wheel - tile - 8,
+                    top=mid,
+                    width=tile,
+                    height=tile,
+                ),
+                ft.Container(
+                    content=self._wheel_tile(
+                        "Vitality",
+                        "Health and armour",
+                        "vitality",
+                        "3",
+                        icon="vitality",
+                        size=tile,
+                    ),
+                    left=mid,
+                    top=wheel - tile - 8,
+                    width=tile,
+                    height=tile,
+                ),
+                ft.Container(
+                    content=self._wheel_tile(
+                        "Garage",
+                        "Safehouse cars",
+                        "garage",
+                        "4",
+                        icon="garage",
+                        size=tile,
+                    ),
+                    left=8,
+                    top=mid,
+                    width=tile,
+                    height=tile,
+                ),
+                # Center Settings
+                ft.Container(
+                    content=self._wheel_center_settings(size=center),
+                    left=cmid,
+                    top=cmid,
+                    width=center,
+                    height=center,
+                ),
+            ],
+            width=wheel,
+            height=wheel,
+        )
         return ft.Column(
             [
                 self.active_chip,
-                ft.Row(
-                    [
-                        self._menu_tile(
-                            "Money", "Set or add cash", "money", "1", icon="money"
-                        ),
-                        self._menu_tile(
-                            "Weapons", "Guns and ammo", "weapons", "2", icon="weapons"
-                        ),
-                    ],
-                    spacing=12,
-                ),
-                ft.Row(
-                    [
-                        self._menu_tile(
-                            "Vitality",
-                            "Health and armour",
-                            "vitality",
-                            "3",
-                            icon="vitality",
-                        ),
-                        self._menu_tile(
-                            "Settings",
-                            "Backup and options",
-                            "settings",
-                            "4",
-                            icon="settings",
-                        ),
-                    ],
-                    spacing=12,
-                ),
+                ft.Container(content=stack, alignment=ft.Alignment.CENTER, expand=True),
                 ft.TextButton(
                     "Change save",
                     style=ft.ButtonStyle(color=MUTED),
@@ -441,8 +596,10 @@ class Save4BucksApp:
                     on_click=lambda _e: self._goto("gate"),
                 ),
             ],
-            spacing=10,
+            spacing=8,
             tight=True,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            expand=True,
         )
 
     # --- save gate ---
@@ -808,7 +965,7 @@ class Save4BucksApp:
                 ft.Divider(color=OUTLINE, height=16),
                 ft.Text("Writes", color=GOLD, weight=ft.FontWeight.W_600),
                 ft.Text(
-                    "PlayerInfo only (money, weapons, vitality). "
+                    "PlayerInfo (money, weapons, vitality) and Block 4 Garages. "
                     "Unsupported save versions are blocked.",
                     color=MUTED,
                     size=13,
@@ -822,6 +979,51 @@ class Save4BucksApp:
             ],
             spacing=10,
             tight=True,
+        )
+
+    def _build_garage(self) -> ft.Control:
+        self.garage_house_dd = ft.Dropdown(
+            label="Safehouse",
+            options=[
+                ft.DropdownOption(key=s.id, text=s.name) for s in SAFEHOUSES
+            ],
+            value=self._garage_safehouse,
+            on_select=lambda _e: self._on_garage_house(),
+            border_color=GREEN_HI,
+            focused_border_color=FOCUS,
+            label_style=ft.TextStyle(color=MUTED),
+            text_style=ft.TextStyle(color=FG),
+            expand=True,
+        )
+        self.garage_slots_col = ft.Column(spacing=8, tight=True)
+        return ft.Column(
+            [
+                self._back_bar("Garage"),
+                self.active_chip,
+                self.garage_house_dd,
+                self.garage_slots_col,
+                ft.Row(
+                    [
+                        ft.FilledButton(
+                            "Reload",
+                            bgcolor=PANEL,
+                            color=GOLD,
+                            style=ft.ButtonStyle(side=ft.BorderSide(1, GOLD)),
+                            on_click=lambda _e: self._load_garage_into_ui(),
+                        ),
+                        ft.Container(expand=True),
+                        ft.Text(
+                            "Spawn fills a free parking spot",
+                            color=MUTED,
+                            size=11,
+                        ),
+                    ],
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                ),
+            ],
+            spacing=10,
+            tight=True,
+            expand=True,
         )
 
     # --- weapons UI ---
@@ -1036,7 +1238,7 @@ class Save4BucksApp:
                 wid = int(raw, 0)
             except ValueError:
                 self._alert(APP_NAME, "Enter a valid custom weapon ID.", error=True)
-                return
+            return
             self._apply_picked_weapon(wid)
             self.page.pop_dialog()
 
@@ -1138,7 +1340,7 @@ class Save4BucksApp:
                 a = int(raw)
             except ValueError:
                 self._alert(APP_NAME, f"Slot {i}: ammo must be a whole number.", error=True)
-                return None
+            return None
             if a < 0 or a > 0xFFFF:
                 self._alert(APP_NAME, f"Slot {i}: ammo must be 0..65535.", error=True)
                 return None
@@ -1379,6 +1581,307 @@ class Save4BucksApp:
             self.page.update()
         except Exception as e:
             self._alert(APP_NAME, str(e), error=True)
+
+    # --- garage ---
+
+    def _on_garage_house(self) -> None:
+        self._garage_safehouse = self.garage_house_dd.value or SAFEHOUSES[0].id
+        self._refresh_garage_slots()
+        self.page.update()
+
+    def _load_garage_into_ui(self) -> None:
+        slot = self.active_slot
+        if slot is None or slot.error:
+            return
+        if not hasattr(self, "garage_slots_col"):
+            return
+        try:
+            cars = read_stored_cars_file(slot.path)
+        except Exception as e:
+            self.set_status(f"Garage read failed: {e}")
+            return
+        self._garage_draft = list(cars)
+        self._refresh_garage_slots()
+        self.page.update()
+
+    def _refresh_garage_slots(self) -> None:
+        if not hasattr(self, "garage_slots_col"):
+            return
+        sid = self._garage_safehouse
+        try:
+            raw = (
+                self.active_slot.path.read_bytes()
+                if self.active_slot and not self.active_slot.error
+                else b""
+            )
+            spots = [s for s in list_safehouse_slots(raw) if s.safehouse_id == sid] if raw else []
+        except Exception as e:
+            self.garage_slots_col.controls = [
+                ft.Text(f"Could not read garages: {e}", color=ERROR)
+            ]
+            return
+        cards: list[ft.Control] = []
+        for spot in spots:
+            cards.append(self._garage_spot_card(spot.spot_index, spot))
+        if not cards:
+            cards.append(ft.Text("No parking spots for this safehouse.", color=MUTED))
+        self.garage_slots_col.controls = cards
+
+    def _garage_spot_card(self, spot_i: int, spot) -> ft.Control:
+        car = spot.car
+        install = self.active_install
+        if car and car.valid:
+            title = vehicle_name(car.model, install)
+            colors = ",".join(str(c) for c in car.colors)
+            body = ft.Column(
+                [
+                    ft.Row(
+                        [
+                            ft.Text(
+                                f"Spot {spot_i + 1}: {title}",
+                                size=13,
+                                weight=ft.FontWeight.W_600,
+                                color=FG,
+                            ),
+                            ft.Container(expand=True),
+                            ft.Text(f"#{car.model}", size=11, color=MUTED),
+                        ],
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    ),
+                    ft.Text(f"Colors {colors} · Livery {car.livery}", size=11, color=MUTED),
+                    ft.Row(
+                        [
+                            ft.OutlinedButton(
+                                "Change",
+                                height=30,
+                                style=ft.ButtonStyle(
+                                    color=GOLD, side=ft.BorderSide(1, GOLD)
+                                ),
+                                on_click=lambda _e, si=spot_i: self._open_vehicle_picker(
+                                    "edit", si, car_index=car.index
+                                ),
+                            ),
+                            ft.OutlinedButton(
+                                "Clear",
+                                height=30,
+                                style=ft.ButtonStyle(
+                                    color=ERROR, side=ft.BorderSide(1, ERROR)
+                                ),
+                                on_click=lambda _e, idx=car.index: self._garage_clear(idx),
+                            ),
+                        ],
+                        spacing=8,
+                    ),
+                ],
+                spacing=4,
+                tight=True,
+            )
+        else:
+            body = ft.Column(
+                [
+                    ft.Text(
+                        f"Spot {spot_i + 1}: Empty",
+                        size=13,
+                        weight=ft.FontWeight.W_600,
+                        color=MUTED,
+                    ),
+                    ft.OutlinedButton(
+                        "Spawn",
+                        height=30,
+                        style=ft.ButtonStyle(color=GOLD, side=ft.BorderSide(1, GOLD)),
+                        on_click=lambda _e, si=spot_i: self._open_vehicle_picker(
+                            "spawn", si
+                        ),
+                    ),
+                ],
+                spacing=6,
+                tight=True,
+            )
+        return ft.Container(
+            content=body,
+            bgcolor=PANEL,
+            border=ft.Border.all(1.5, OUTLINE),
+            border_radius=6,
+            padding=ft.Padding.symmetric(horizontal=10, vertical=8),
+        )
+
+    def _open_vehicle_picker(
+        self, mode: str, spot_index: int, *, car_index: int | None = None
+    ) -> None:
+        self._vehicle_picker_mode = mode
+        self._vehicle_picker_spot = (self._garage_safehouse, spot_index)
+        self._vehicle_picker_car_index = car_index
+        vehicles = list_vehicles(self.active_install)
+        options = [
+            ft.DropdownOption(key=str(i), text=f"{name}  [{i}]") for i, name in vehicles
+        ]
+        dd = ft.Dropdown(
+            label="Vehicle",
+            options=options[:400],
+            border_color=GREEN_HI,
+            focused_border_color=FOCUS,
+            label_style=ft.TextStyle(color=MUTED),
+            text_style=ft.TextStyle(color=FG),
+            expand=True,
+        )
+        idx_field = ft.TextField(
+            label="Model index",
+            value="",
+            width=120,
+            border_color=GREEN_HI,
+            focused_border_color=FOCUS,
+            label_style=ft.TextStyle(color=MUTED),
+            text_style=ft.TextStyle(color=FG),
+        )
+
+        def close(_e=None) -> None:
+            self.page.pop_dialog()
+
+        def apply(_e=None) -> None:
+            raw = (dd.value or idx_field.value or "").strip()
+            if dd.value:
+                raw = dd.value.strip()
+            try:
+                mid = int(raw)
+            except ValueError:
+                self._alert(APP_NAME, "Pick a vehicle or enter a model index.", error=True)
+                return
+            if mid <= 0:
+                self._alert(APP_NAME, "Model index must be positive.", error=True)
+                return
+            close()
+            if mode == "spawn":
+                self._garage_spawn(mid)
+            else:
+                if car_index is None:
+                    return
+                self._garage_change_model(car_index, mid)
+
+        self.page.show_dialog(
+            ft.AlertDialog(
+                modal=True,
+                title=ft.Text("Pick vehicle", color=GOLD),
+                content=ft.Column(
+                    [dd, idx_field],
+                    tight=True,
+                    spacing=10,
+                    width=420,
+                    height=140,
+                ),
+                actions=[
+                    ft.TextButton(
+                        "Cancel", on_click=close, style=ft.ButtonStyle(color=MUTED)
+                    ),
+                    ft.FilledButton(
+                        "OK",
+                        bgcolor=GREEN_HI,
+                        color=BTN_ON_GREEN,
+                        on_click=apply,
+                    ),
+                ],
+                actions_alignment=ft.MainAxisAlignment.END,
+            )
+        )
+
+    def _garage_clear(self, car_index: int) -> None:
+        slot = self.active_slot
+        if slot is None or not self._gate_write(slot):
+            return
+
+        def go() -> None:
+            try:
+                allow = "Non-CE" in check_write(slot.path, allow_non_ce_path=False).reason
+                update_stored_car(
+                    slot.path,
+                    car_index,
+                    clear=True,
+                    backup=bool(self._settings.get("autobackup", True)),
+                    allow_non_ce_path=allow,
+                )
+                for p in self.targets_for(slot)[1:]:
+                    update_stored_car(
+                        p,
+                        car_index,
+                        clear=True,
+                        backup=False,
+                        allow_non_ce_path=True,
+                    )
+                self.set_status(f"Cleared garage slot {car_index}")
+                self._load_garage_into_ui()
+            except Exception as e:
+                self._alert(APP_NAME, str(e), error=True)
+
+        self._confirm_paths_generic(slot, go)
+
+    def _garage_change_model(self, car_index: int, model: int) -> None:
+        slot = self.active_slot
+        if slot is None or not self._gate_write(slot):
+            return
+
+        def go() -> None:
+            try:
+                allow = "Non-CE" in check_write(slot.path, allow_non_ce_path=False).reason
+                update_stored_car(
+                    slot.path,
+                    car_index,
+                    model=model,
+                    backup=bool(self._settings.get("autobackup", True)),
+                    allow_non_ce_path=allow,
+                )
+                for p in self.targets_for(slot)[1:]:
+                    update_stored_car(
+                        p,
+                        car_index,
+                        model=model,
+                        backup=False,
+                        allow_non_ce_path=True,
+                    )
+                self.set_status(
+                    f"Slot {car_index} → {vehicle_name(model, self.active_install)}"
+                )
+                self._load_garage_into_ui()
+            except Exception as e:
+                self._alert(APP_NAME, str(e), error=True)
+
+        self._confirm_paths_generic(slot, go)
+
+    def _garage_spawn(self, model: int) -> None:
+        slot = self.active_slot
+        if slot is None or not self._gate_write(slot):
+            return
+        sid = self._garage_safehouse
+
+        def go() -> None:
+            try:
+                allow = "Non-CE" in check_write(slot.path, allow_non_ce_path=False).reason
+                new, _, _ = spawn_at_safehouse(
+                    slot.path,
+                    sid,
+                    model=model,
+                    flags=proofs_to_flags(valid=True),
+                    backup=bool(self._settings.get("autobackup", True)),
+                    allow_non_ce_path=allow,
+                )
+                for p in self.targets_for(slot)[1:]:
+                    try:
+                        spawn_at_safehouse(
+                            p,
+                            sid,
+                            model=model,
+                            flags=FLAG_VALID,
+                            backup=False,
+                            allow_non_ce_path=True,
+                        )
+                    except RuntimeError:
+                        pass
+                self.set_status(
+                    f"Spawned {vehicle_name(new.model, self.active_install)} at {sid}"
+                )
+                self._load_garage_into_ui()
+            except Exception as e:
+                self._alert(APP_NAME, str(e), error=True)
+
+        self._confirm_paths_generic(slot, go)
 
     # --- vitality ---
 
