@@ -71,17 +71,19 @@ class GameFamily(str, Enum):
 
 
 class WriteTechnique(str, Enum):
-    """How PlayerInfo fields are patched for a given save family."""
+    """How allowlisted dword-57 fields are patched for a given save family."""
 
     # Name keeps "V57" because that is the only allowlisted dword; the same
     # in-place offsets apply to every GameFamily that carries dword 57.
     PLAYERINFO_INPLACE_V57 = "playerinfo_inplace_v57"
+    GARAGES_INPLACE_V57 = "garages_inplace_v57"
     UNSUPPORTED = "unsupported"
 
     @property
     def label(self) -> str:
         return {
             WriteTechnique.PLAYERINFO_INPLACE_V57: "PlayerInfo in-place",
+            WriteTechnique.GARAGES_INPLACE_V57: "Garages in-place",
             WriteTechnique.UNSUPPORTED: "unsupported",
         }[self]
 

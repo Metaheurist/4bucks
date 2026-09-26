@@ -6,6 +6,53 @@ import struct
 from pathlib import Path
 
 
+def _pack_stored_car(
+    *,
+    model: int,
+    x: float,
+    y: float,
+    z: float,
+    rot: tuple[int, int, int] = (0, 0, 0),
+    colors: tuple[int, int, int, int] = (0, 0, 0, 0),
+    flags: int = 1,
+) -> bytes:
+    from src.save_garage import _pack_car
+
+    return _pack_car(
+        model=model,
+        x=x,
+        y=y,
+        z=z,
+        rot=rot,
+        colors=colors,
+        flags=flags,
+    )
+
+
+def make_garages_block(
+    cars: list[bytes] | None = None,
+    *,
+    safehouse_count: int = 5,
+) -> bytes:
+    """Build Block 4 payload+header sized like CE (StoredCar[20] + Garage[40] pad)."""
+    # Payload layout: header through 0x0E, cars @ 0x0F, garages @ 0x05AF
+    payload_len = 0x0F + 20 * 72 + 40 * 72  # 0x10EF
+    payload = bytearray(payload_len)
+    struct.pack_into("<I", payload, 0x0B, safehouse_count)
+    if cars:
+        for i, raw in enumerate(cars[:20]):
+            if len(raw) != 72:
+                raise ValueError("each car must be 72 bytes")
+            off = 0x0F + i * 72
+            payload[off : off + 72] = raw
+    block_size = 9 + payload_len  # BLOCK + size + payload
+    block = bytearray(block_size)
+    block[0:5] = b"BLOCK"
+    struct.pack_into("<I", block, 5, block_size)
+    block[9:] = payload
+    return bytes(block)
+
+
 def make_minimal_save(
     *,
     version: int = 57,
@@ -20,8 +67,10 @@ def make_minimal_save(
     weapons: list[int] | None = None,
     ammo: list[int] | None = None,
     current_weapon: int = 0,
+    with_garages: bool = False,
+    garage_cars: list[bytes] | None = None,
 ) -> bytes:
-    """Build a tiny but parseable SGTA4-like buffer (metadata + 2 BLOCKs)."""
+    """Build a tiny but parseable SGTA4-like buffer (metadata + BLOCKs)."""
     if display is None:
         display = money
     if weapons is None:
@@ -60,16 +109,26 @@ def make_minimal_save(
         struct.pack_into("<I", b1, pi + 0x5C + i * 4, weapons[i])
         struct.pack_into("<H", b1, pi + 0x84 + i * 2, ammo[i])
 
+    # Optional stub blocks 2-3 so Garages is index 4
+    extra = b""
+    if with_garages or garage_cars is not None:
+        for _ in range(2):
+            stub = bytearray(16)
+            stub[0:5] = b"BLOCK"
+            struct.pack_into("<I", stub, 5, 16)
+            extra += bytes(stub)
+        extra += make_garages_block(garage_cars)
+
     meta = bytearray(0x110)
     struct.pack_into("<I", meta, 0, version)
-    total = 0x110 + len(b0) + len(b1)
+    total = 0x110 + len(b0) + len(b1) + len(extra)
     struct.pack_into("<I", meta, 4, total)
     meta[0x0C:0x10] = magic
     title = "TEST\x00".encode("utf-16-le")
     meta[0x10 : 0x10 + len(title)] = title
 
     # CE End marker at EOF (pre-CE fixtures append a GFWL-style trail separately).
-    return bytes(meta) + bytes(b0) + bytes(b1) + b"END\x00"
+    return bytes(meta) + bytes(b0) + bytes(b1) + extra + b"END\x00"
 
 
 def make_pre_ce_save(**kwargs) -> bytes:
