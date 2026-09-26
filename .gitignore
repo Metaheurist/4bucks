@@ -13,3 +13,5 @@ tests/**/__pycache__/
 save4bucks_settings.json
 .pytest_cache/
 
+
+Save4Bucks-*.spec
