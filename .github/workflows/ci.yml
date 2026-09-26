@@ -23,7 +23,7 @@ jobs:
     if: |
       github.event_name != 'push' ||
       !contains(github.event.head_commit.message, '[skip ci]')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
 
@@ -48,7 +48,7 @@ jobs:
     if: |
       github.event_name != 'push' ||
       !contains(github.event.head_commit.message, '[skip ci]')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
 
