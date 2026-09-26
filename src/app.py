@@ -1,18 +1,17 @@
-"""Save 4Bucks - tkinter UI for GTA IV CE save money editing."""
+"""Save 4Bucks - Flet (Flutter) UI for GTA IV CE save money editing."""
 
 from __future__ import annotations
 
 import sys
-import tkinter as tk
 from pathlib import Path
-from tkinter import messagebox, ttk
+
+import flet as ft
 
 from . import APP_NAME, __version__
 from .detect import SaveSlot, find_profile_dirs, is_gtaiv_running, list_slots
 from .save_money import add_money, set_money
 from .settings import load_settings, save_settings
 from .versioning import check_write, inspect_save, status_chip
-
 
 # Liberty City greys + federal green / $4 gold
 BG = "#12161a"
@@ -22,7 +21,6 @@ MUTED = "#8a9490"
 GOLD = "#d4af37"
 GREEN = "#1e4d3a"
 GREEN_HI = "#2d6b52"
-ACCENT = "#c4a035"
 
 
 def _resource_path(*parts: str) -> Path:
@@ -34,141 +32,194 @@ def _resource_path(*parts: str) -> Path:
     return base.joinpath(*parts)
 
 
-class Save4BucksApp(tk.Tk):
-    def __init__(self) -> None:
-        super().__init__()
-        self.title(f"{APP_NAME} v{__version__}")
-        self.minsize(600, 480)
-        self.geometry("680x520")
-        self.configure(bg=BG)
-
-        icon = _resource_path("assets", "icon.ico")
-        if icon.is_file():
-            try:
-                self.iconbitmap(default=str(icon))
-            except Exception:
-                pass
-
+class Save4BucksApp:
+    def __init__(self, page: ft.Page) -> None:
+        self.page = page
         self._settings = load_settings()
         self.profiles: list[Path] = []
         self.slots: list[SaveSlot] = []
-        self._build()
+        self._selected_index: int | None = None
+
+        page.title = f"{APP_NAME} v{__version__}"
+        page.theme_mode = ft.ThemeMode.DARK
+        page.bgcolor = BG
+        page.padding = 16
+        page.window.width = 720
+        page.window.height = 560
+        page.window.min_width = 600
+        page.window.min_height = 480
+
+        icon = _resource_path("assets", "icon.png")
+        if icon.is_file():
+            page.window.icon = str(icon)
+
+        self.profile_dd = ft.Dropdown(
+            label="Profile",
+            expand=True,
+            options=[],
+            on_select=lambda _e: self.load_slots(),
+            border_color=GREEN_HI,
+            focused_border_color=GOLD,
+            label_style=ft.TextStyle(color=MUTED),
+            text_style=ft.TextStyle(color=FG, size=13),
+        )
+        self.version_chip = ft.Text("", color=GREEN_HI, weight=ft.FontWeight.BOLD, size=13)
+        self.amount_field = ft.TextField(
+            label="Amount",
+            value="500000",
+            width=160,
+            border_color=GREEN_HI,
+            focused_border_color=GOLD,
+            label_style=ft.TextStyle(color=MUTED),
+            text_style=ft.TextStyle(color=FG),
+        )
+        self.autobackup = ft.Checkbox(
+            label="Autobackup (beside save as .backup + copy under app backups/)",
+            value=bool(self._settings.get("autobackup", True)),
+            active_color=GOLD,
+            on_change=lambda _e: self._persist_settings(),
+            label_style=ft.TextStyle(color=FG, size=13),
+        )
+        self.also_autosave = ft.Checkbox(
+            label="Also apply to autosave (SGTA412) when editing a manual slot",
+            value=bool(self._settings.get("also_autosave", True)),
+            active_color=GOLD,
+            on_change=lambda _e: self._persist_settings(),
+            label_style=ft.TextStyle(color=FG, size=13),
+        )
+        self.status = ft.Text("", color=MUTED, size=12)
+        self.slots_table = ft.DataTable(
+            columns=[
+                ft.DataColumn(ft.Text("Slot", color=GOLD)),
+                ft.DataColumn(ft.Text("File", color=GOLD)),
+                ft.DataColumn(ft.Text("Money", color=GOLD)),
+                ft.DataColumn(ft.Text("Modified", color=GOLD)),
+            ],
+            rows=[],
+            border=ft.border.all(1, GREEN),
+            border_radius=6,
+            heading_row_color=GREEN,
+            data_row_min_height=36,
+            data_row_max_height=40,
+            column_spacing=20,
+            expand=True,
+        )
+
+        page.add(
+            ft.Column(
+                [
+                    ft.Text(APP_NAME, size=22, weight=ft.FontWeight.BOLD, color=GOLD),
+                    ft.Text(
+                        "Offline save editor · GTA IV Complete Edition · $4 Liberty bills (not live memory)",
+                        color=MUTED,
+                        size=12,
+                    ),
+                    ft.Row(
+                        [
+                            self.profile_dd,
+                            ft.FilledButton(
+                                "Refresh",
+                                bgcolor=GREEN_HI,
+                                color=GOLD,
+                                on_click=lambda _e: self.refresh(),
+                            ),
+                        ],
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    ),
+                    self.version_chip,
+                    ft.Container(
+                        content=ft.Column([self.slots_table], scroll=ft.ScrollMode.AUTO, expand=True),
+                        bgcolor=PANEL,
+                        border_radius=6,
+                        padding=8,
+                        expand=True,
+                    ),
+                    ft.Row(
+                        [
+                            self.amount_field,
+                            ft.FilledButton(
+                                "Set money",
+                                bgcolor=GREEN_HI,
+                                color=GOLD,
+                                on_click=lambda _e: self.on_set(),
+                            ),
+                            ft.FilledButton(
+                                "Add money",
+                                bgcolor=GREEN,
+                                color=GOLD,
+                                on_click=lambda _e: self.on_add(),
+                            ),
+                        ],
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    ),
+                    self.autobackup,
+                    self.also_autosave,
+                    self.status,
+                ],
+                expand=True,
+                spacing=8,
+            )
+        )
         self.refresh()
 
-    def _build(self) -> None:
-        style = ttk.Style(self)
-        try:
-            style.theme_use("clam")
-        except Exception:
-            pass
-        style.configure("TLabel", background=BG, foreground=FG)
-        style.configure("TFrame", background=BG)
-        style.configure("TCheckbutton", background=BG, foreground=FG)
-        style.configure(
-            "Header.TLabel",
-            font=("Segoe UI", 16, "bold"),
-            foreground=GOLD,
-            background=BG,
-        )
-        style.configure("Sub.TLabel", foreground=MUTED, background=BG, font=("Segoe UI", 9))
-        style.configure("Status.TLabel", foreground=MUTED, background=BG)
-        style.configure("Chip.TLabel", foreground=GREEN_HI, background=BG, font=("Segoe UI", 9, "bold"))
-        style.configure("TButton", padding=4)
-        style.configure(
-            "Treeview",
-            background=PANEL,
-            fieldbackground=PANEL,
-            foreground=FG,
-            rowheight=24,
-        )
-        style.configure("Treeview.Heading", background=GREEN, foreground=GOLD, relief="flat")
-        style.map("Treeview", background=[("selected", GREEN_HI)])
-
-        root = ttk.Frame(self, padding=14)
-        root.pack(fill=tk.BOTH, expand=True)
-
-        ttk.Label(root, text=f"{APP_NAME}", style="Header.TLabel").pack(anchor=tk.W)
-        ttk.Label(
-            root,
-            text="Offline save editor · GTA IV Complete Edition · $4 Liberty bills (not live memory)",
-            style="Sub.TLabel",
-        ).pack(anchor=tk.W, pady=(0, 8))
-
-        top = ttk.Frame(root)
-        top.pack(fill=tk.X, pady=(0, 6))
-        ttk.Label(top, text="Profile:").pack(side=tk.LEFT)
-        self.profile_var = tk.StringVar()
-        self.profile_combo = ttk.Combobox(top, textvariable=self.profile_var, state="readonly", width=52)
-        self.profile_combo.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=6)
-        self.profile_combo.bind("<<ComboboxSelected>>", lambda _e: self.load_slots())
-        ttk.Button(top, text="Refresh", command=self.refresh).pack(side=tk.LEFT)
-
-        self.version_chip = ttk.Label(root, text="", style="Chip.TLabel")
-        self.version_chip.pack(anchor=tk.W, pady=(0, 4))
-
-        cols = ("label", "file", "money", "modified")
-        self.tree = ttk.Treeview(root, columns=cols, show="headings", height=10, selectmode="browse")
-        self.tree.heading("label", text="Slot")
-        self.tree.heading("file", text="File")
-        self.tree.heading("money", text="Money")
-        self.tree.heading("modified", text="Modified")
-        self.tree.column("label", width=130)
-        self.tree.column("file", width=100)
-        self.tree.column("money", width=120)
-        self.tree.column("modified", width=160)
-        self.tree.pack(fill=tk.BOTH, expand=True, pady=6)
-        self.tree.bind("<<TreeviewSelect>>", lambda _e: self.update_version_chip())
-
-        form = ttk.Frame(root)
-        form.pack(fill=tk.X, pady=6)
-        ttk.Label(form, text="Amount:").pack(side=tk.LEFT)
-        self.amount_var = tk.StringVar(value="500000")
-        ttk.Entry(form, textvariable=self.amount_var, width=16).pack(side=tk.LEFT, padx=6)
-        ttk.Button(form, text="Set money", command=self.on_set).pack(side=tk.LEFT, padx=2)
-        ttk.Button(form, text="Add money", command=self.on_add).pack(side=tk.LEFT, padx=2)
-
-        self.autobackup = tk.BooleanVar(value=bool(self._settings.get("autobackup", True)))
-        ttk.Checkbutton(
-            root,
-            text="Autobackup (beside save as .backup + copy under app backups/)",
-            variable=self.autobackup,
-            command=self._persist_settings,
-        ).pack(anchor=tk.W)
-
-        self.also_autosave = tk.BooleanVar(value=bool(self._settings.get("also_autosave", True)))
-        ttk.Checkbutton(
-            root,
-            text="Also apply to autosave (SGTA412) when editing a manual slot",
-            variable=self.also_autosave,
-            command=self._persist_settings,
-        ).pack(anchor=tk.W)
-
-        self.status = ttk.Label(root, text="", style="Status.TLabel")
-        self.status.pack(anchor=tk.W, pady=(8, 0))
-
     def _persist_settings(self) -> None:
-        self._settings["autobackup"] = bool(self.autobackup.get())
-        self._settings["also_autosave"] = bool(self.also_autosave.get())
+        self._settings["autobackup"] = bool(self.autobackup.value)
+        self._settings["also_autosave"] = bool(self.also_autosave.value)
         try:
             save_settings(self._settings)
         except OSError:
             pass
 
     def set_status(self, text: str) -> None:
-        self.status.configure(text=text)
+        self.status.value = text
+        self.page.update()
+
+    def _alert(self, title: str, message: str, *, error: bool = False) -> None:
+        def close(_e: ft.ControlEvent | None = None) -> None:
+            self.page.pop_dialog()
+
+        self.page.show_dialog(
+            ft.AlertDialog(
+                modal=True,
+                title=ft.Text(title, color=GOLD if not error else "#e07070"),
+                content=ft.Text(message, color=FG),
+                bgcolor=PANEL,
+                actions=[ft.TextButton("OK", on_click=close, style=ft.ButtonStyle(color=GOLD))],
+                actions_alignment=ft.MainAxisAlignment.END,
+            )
+        )
+
+    def _confirm(self, title: str, message: str, on_yes) -> None:
+        def cancel(_e: ft.ControlEvent) -> None:
+            self.page.pop_dialog()
+
+        def accept(_e: ft.ControlEvent) -> None:
+            self.page.pop_dialog()
+            on_yes()
+
+        self.page.show_dialog(
+            ft.AlertDialog(
+                modal=True,
+                title=ft.Text(title, color=GOLD),
+                content=ft.Text(message, color=FG),
+                bgcolor=PANEL,
+                actions=[
+                    ft.TextButton("Cancel", on_click=cancel, style=ft.ButtonStyle(color=MUTED)),
+                    ft.TextButton("Continue", on_click=accept, style=ft.ButtonStyle(color=GOLD)),
+                ],
+                actions_alignment=ft.MainAxisAlignment.END,
+            )
+        )
 
     def update_version_chip(self) -> None:
-        slot = None
-        sel = self.tree.selection()
-        if sel:
-            slot = self.slots[int(sel[0])]
-        if slot is None:
-            self.version_chip.configure(text="")
+        if self._selected_index is None or self._selected_index >= len(self.slots):
+            self.version_chip.value = ""
+            self.page.update()
             return
+        slot = self.slots[self._selected_index]
         try:
             ident = inspect_save(slot.path)
             check = check_write(slot.path, allow_non_ce_path=False)
-            # chip shows identity; blocked state if hard fail
             if not check.allowed and "Non-CE" in check.reason:
                 soft = check_write(slot.path, allow_non_ce_path=True)
                 text = status_chip(ident, soft if soft.allowed else check)
@@ -178,127 +229,174 @@ class Save4BucksApp(tk.Tk):
                 text = status_chip(ident, check)
             if ident.mission_title:
                 text += f" · {ident.mission_title[:40]}"
-            self.version_chip.configure(text=text)
+            self.version_chip.value = text
         except Exception as e:
-            self.version_chip.configure(text=f"Cannot inspect save: {e}")
+            self.version_chip.value = f"Cannot inspect save: {e}"
+        self.page.update()
+
+    def _on_row_select(self, index: int) -> None:
+        self._selected_index = index
+        for i, row in enumerate(self.slots_table.rows):
+            row.selected = i == index
+        self.update_version_chip()
 
     def refresh(self) -> None:
         self.profiles = find_profile_dirs()
         labels = [str(p) for p in self.profiles]
-        self.profile_combo["values"] = labels
+        self.profile_dd.options = [ft.DropdownOption(key=lab, text=lab) for lab in labels]
         if labels:
-            current = self.profile_var.get()
+            current = self.profile_dd.value
             if current not in labels:
-                self.profile_var.set(labels[0])
+                self.profile_dd.value = labels[0]
             self.load_slots()
-            self.set_status(f"Found {len(self.profiles)} profile(s). Save editor only - close GTAIV.exe before writing.")
+            self.set_status(
+                f"Found {len(self.profiles)} profile(s). Save editor only - close GTAIV.exe before writing."
+            )
         else:
-            self.profile_var.set("")
-            self.tree.delete(*self.tree.get_children())
+            self.profile_dd.value = None
             self.slots = []
-            self.version_chip.configure(text="")
+            self._selected_index = None
+            self.slots_table.rows = []
+            self.version_chip.value = ""
             self.set_status("No GTA IV Profiles with SGTA saves found under Documents.")
+            self.page.update()
 
     def load_slots(self) -> None:
-        self.tree.delete(*self.tree.get_children())
         self.slots = []
-        path_str = self.profile_var.get()
+        self._selected_index = None
+        path_str = self.profile_dd.value
         if not path_str:
+            self.slots_table.rows = []
+            self.page.update()
             return
         profile = Path(path_str)
         self.slots = list_slots(profile)
+        rows: list[ft.DataRow] = []
         for i, s in enumerate(self.slots):
             money_txt = f"${s.money:,}" if s.money is not None else (s.error or "error")
-            self.tree.insert(
-                "",
-                tk.END,
-                iid=str(i),
-                values=(s.label, s.slot_name, money_txt, s.modified.strftime("%Y-%m-%d %H:%M")),
+
+            def tap(index: int):
+                return lambda _e: self._on_row_select(index)
+
+            rows.append(
+                ft.DataRow(
+                    selected=(self._selected_index == i),
+                    cells=[
+                        ft.DataCell(ft.Text(s.label, color=FG), on_tap=tap(i)),
+                        ft.DataCell(ft.Text(s.slot_name, color=FG), on_tap=tap(i)),
+                        ft.DataCell(ft.Text(money_txt, color=FG), on_tap=tap(i)),
+                        ft.DataCell(
+                            ft.Text(s.modified.strftime("%Y-%m-%d %H:%M"), color=MUTED),
+                            on_tap=tap(i),
+                        ),
+                    ],
+                )
             )
+        self.slots_table.rows = rows
         if self.slots:
             prefer = next((i for i, s in enumerate(self.slots) if s.slot_name == "SGTA412"), 0)
-            self.tree.selection_set(str(prefer))
-            self.tree.focus(str(prefer))
+            if self._selected_index is None:
+                self._selected_index = prefer
+            # refresh selected flags
+            for i, row in enumerate(self.slots_table.rows):
+                row.selected = i == self._selected_index
             self.update_version_chip()
+        else:
+            self.version_chip.value = ""
+            self.page.update()
 
     def selected_slot(self) -> SaveSlot | None:
-        sel = self.tree.selection()
-        if not sel:
-            messagebox.showwarning(APP_NAME, "Select a save slot first.")
+        if self._selected_index is None or self._selected_index >= len(self.slots):
+            self._alert(APP_NAME, "Select a save slot first.")
             return None
-        return self.slots[int(sel[0])]
+        return self.slots[self._selected_index]
 
     def parse_amount(self) -> int | None:
-        raw = self.amount_var.get().strip().replace(",", "").replace("$", "")
+        raw = (self.amount_field.value or "").strip().replace(",", "").replace("$", "")
         try:
             amount = int(raw)
         except ValueError:
-            messagebox.showerror(APP_NAME, "Enter a whole-number amount.")
+            self._alert(APP_NAME, "Enter a whole-number amount.", error=True)
             return None
         if amount < 0:
-            messagebox.showerror(APP_NAME, "Amount cannot be negative.")
+            self._alert(APP_NAME, "Amount cannot be negative.", error=True)
             return None
-        if amount > 999_999_999:
-            if not messagebox.askyesno(
-                APP_NAME,
-                f"${amount:,} is above the usual UI clamp (999,999,999).\nContinue anyway?",
-            ):
-                return None
         return amount
-
-    def ensure_game_closed(self) -> bool:
-        if is_gtaiv_running():
-            messagebox.showerror(
-                APP_NAME,
-                "GTAIV.exe is running.\n\nClose the game completely before editing saves, "
-                "or your changes may be overwritten.",
-            )
-            return False
-        return True
-
-    def confirm_write(self, path: Path) -> bool:
-        check = check_write(path, allow_non_ce_path=False)
-        if check.allowed:
-            if check.warnings:
-                return messagebox.askyesno(
-                    APP_NAME,
-                    "Warnings:\n- " + "\n- ".join(check.warnings) + "\n\nContinue?",
-                )
-            return True
-        if "Non-CE" in check.reason:
-            return messagebox.askyesno(
-                APP_NAME,
-                check.reason + "\n\nForce write anyway?",
-            )
-        messagebox.showerror(APP_NAME, f"Write blocked:\n{check.reason}")
-        return False
 
     def targets_for(self, slot: SaveSlot) -> list[Path]:
         paths = [slot.path]
         if (
-            self.also_autosave.get()
+            bool(self.also_autosave.value)
             and slot.slot_name != "SGTA412"
             and slot.path.parent.joinpath("SGTA412").is_file()
         ):
             paths.append(slot.path.parent / "SGTA412")
         return paths
 
-    def _apply(self, mode: str) -> None:
+    def on_set(self) -> None:
+        self._start_apply("set")
+
+    def on_add(self) -> None:
+        self._start_apply("add")
+
+    def _start_apply(self, mode: str) -> None:
         slot = self.selected_slot()
         amount = self.parse_amount()
         if slot is None or amount is None:
             return
         if slot.error:
-            messagebox.showerror(APP_NAME, f"Cannot edit this save:\n{slot.error}")
+            self._alert(APP_NAME, f"Cannot edit this save:\n{slot.error}", error=True)
             return
-        if not self.ensure_game_closed():
+        if is_gtaiv_running():
+            self._alert(
+                APP_NAME,
+                "GTAIV.exe is running.\n\nClose the game completely before editing saves, "
+                "or your changes may be overwritten.",
+                error=True,
+            )
             return
 
+        if amount > 999_999_999:
+            self._confirm(
+                APP_NAME,
+                f"${amount:,} is above the usual UI clamp (999,999,999).\nContinue anyway?",
+                on_yes=lambda: self._confirm_paths(mode, slot, amount),
+            )
+            return
+        self._confirm_paths(mode, slot, amount)
+
+    def _confirm_paths(self, mode: str, slot: SaveSlot, amount: int) -> None:
         paths = self.targets_for(slot)
-        for path in paths:
-            if not self.confirm_write(path):
-                return
+        self._confirm_path_at(mode, slot, amount, paths, 0)
 
+    def _confirm_path_at(
+        self, mode: str, slot: SaveSlot, amount: int, paths: list[Path], index: int
+    ) -> None:
+        if index >= len(paths):
+            self._do_write(mode, paths, amount)
+            return
+        path = paths[index]
+        check = check_write(path, allow_non_ce_path=False)
+        if check.allowed:
+            if check.warnings:
+                self._confirm(
+                    APP_NAME,
+                    "Warnings:\n- " + "\n- ".join(check.warnings) + "\n\nContinue?",
+                    on_yes=lambda: self._confirm_path_at(mode, slot, amount, paths, index + 1),
+                )
+                return
+            self._confirm_path_at(mode, slot, amount, paths, index + 1)
+            return
+        if "Non-CE" in check.reason:
+            self._confirm(
+                APP_NAME,
+                check.reason + "\n\nForce write anyway?",
+                on_yes=lambda: self._confirm_path_at(mode, slot, amount, paths, index + 1),
+            )
+            return
+        self._alert(APP_NAME, f"Write blocked:\n{check.reason}", error=True)
+
+    def _do_write(self, mode: str, paths: list[Path], amount: int) -> None:
         try:
             lines: list[str] = []
             backup_lines: list[str] = []
@@ -308,38 +406,36 @@ class Save4BucksApp(tk.Tk):
                     old, new, bak, _check = set_money(
                         path,
                         amount,
-                        backup=bool(self.autobackup.get()),
+                        backup=bool(self.autobackup.value),
                         allow_non_ce_path=allow_non_ce,
                     )
                 else:
                     old, new, bak, _check = add_money(
                         path,
                         amount,
-                        backup=bool(self.autobackup.get()),
+                        backup=bool(self.autobackup.value),
                         allow_non_ce_path=allow_non_ce,
                     )
-                lines.append(f"{path.name}: ${old:,} → ${new:,}")
+                lines.append(f"{path.name}: ${old:,} -> ${new:,}")
                 if bak:
                     backup_lines.append(f"{path.name}:\n  {bak.beside}\n  {bak.app_copy}")
             self.load_slots()
             self.set_status(" | ".join(lines))
             msg = "Money updated.\n\n" + "\n".join(lines)
             if backup_lines:
-                msg += "\n\nBacked up →\n" + "\n".join(backup_lines)
-            messagebox.showinfo(APP_NAME, msg)
+                msg += "\n\nBacked up ->\n" + "\n".join(backup_lines)
+            self._alert(APP_NAME, msg)
         except Exception as e:
-            messagebox.showerror(APP_NAME, str(e))
+            self._alert(APP_NAME, str(e), error=True)
 
-    def on_set(self) -> None:
-        self._apply("set")
 
-    def on_add(self) -> None:
-        self._apply("add")
+def main(page: ft.Page) -> None:
+    Save4BucksApp(page)
 
 
 def run() -> None:
-    app = Save4BucksApp()
-    app.mainloop()
+    assets = str(_resource_path("assets").parent / "assets")
+    ft.run(main, assets_dir=assets if Path(assets).is_dir() else None)
 
 
 if __name__ == "__main__":
