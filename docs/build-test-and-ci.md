@@ -35,8 +35,8 @@ Workflow: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml).
 
 | Event | Jobs |
 |-------|------|
-| **Pull request** → `main` | Unit tests, Gitleaks + `pip-audit`, Windows EXE builds **x64 + x86** (artifacts) |
-| **Push** → `main` | Unit tests, Gitleaks + `pip-audit`, SemVer **patch** bump, both EXEs via `flet pack`, tag `vX.Y.Z`, GitHub Release with both artifacts |
+| **Pull request** → `main` | Unit tests, Gitleaks + `pip-audit`, Windows EXE matrix **x64** + **x86** (artifacts) |
+| **Push** → `main` | Same gates + EXE matrix, then SemVer **patch** bump, rebuild both EXEs for the tag, GitHub Release |
 | **workflow_dispatch** on `main` | Same as push release path |
 
 Linux jobs run on **`ubuntu-24.04`** (pinned; not `ubuntu-latest`). Gitleaks allowlists `README.md`, `CHANGELOG.md`, and `docs/` for badge/doc false positives (see [`.gitleaks.toml`](../.gitleaks.toml)).

@@ -90,14 +90,18 @@ jobs:
         run: python -m pip_audit -r requirements-dev.txt
 
   build-exe:
-    name: "2 · Build Windows EXE (${{ matrix.arch }})"
+    name: "2 · Build Windows EXE - ${{ matrix.arch }}"
     needs: [unit-tests, security-audit]
-    if: github.event_name == 'pull_request'
+    if: |
+      github.event_name != 'push' ||
+      !contains(github.event.head_commit.message, '[skip ci]')
     runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
-        arch: [x64, x86]
+        include:
+          - arch: x64
+          - arch: x86
     steps:
       - uses: actions/checkout@v5
 
@@ -111,7 +115,7 @@ jobs:
             requirements.txt
             requirements-dev.txt
 
-      - name: Build EXE (${{ matrix.arch }})
+      - name: Build EXE
         shell: pwsh
         run: |
           $py = "${{ steps.py.outputs.python-path }}"
@@ -124,14 +128,14 @@ jobs:
       - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Save4Bucks-${{ matrix.arch }}-pr
+          name: Save4Bucks-${{ matrix.arch }}
           path: dist/Save4Bucks-${{ matrix.arch }}.exe
           if-no-files-found: error
           retention-days: 14
 
   release:
     name: "3 · Version bump & GitHub Release"
-    needs: [unit-tests, security-audit]
+    needs: [unit-tests, security-audit, build-exe]
     if: |
       github.ref == 'refs/heads/main' &&
       (
