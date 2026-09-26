@@ -14,6 +14,7 @@ DEFAULTS: dict = {
     "also_autosave": True,
     "last_profile": "",
     "last_slot": "",
+    "last_install": "",
 }
 
 
@@ -34,8 +35,10 @@ def load_settings(base: Path | None = None) -> dict:
         data["also_autosave"] = bool(loaded.get("also_autosave", DEFAULTS["also_autosave"]))
         lp = loaded.get("last_profile", "")
         ls = loaded.get("last_slot", "")
+        li = loaded.get("last_install", "")
         data["last_profile"] = str(lp) if lp is not None else ""
         data["last_slot"] = str(ls) if ls is not None else ""
+        data["last_install"] = str(li) if li is not None else ""
     except (OSError, json.JSONDecodeError, TypeError, ValueError):
         pass
     return data
@@ -48,5 +51,6 @@ def save_settings(settings: dict, base: Path | None = None) -> None:
         "also_autosave": bool(settings.get("also_autosave", DEFAULTS["also_autosave"])),
         "last_profile": str(settings.get("last_profile") or ""),
         "last_slot": str(settings.get("last_slot") or ""),
+        "last_install": str(settings.get("last_install") or ""),
     }
     path.write_text(json.dumps(out, indent=2) + "\n", encoding="utf-8")

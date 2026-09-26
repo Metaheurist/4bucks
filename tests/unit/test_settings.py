@@ -13,8 +13,10 @@ from src.settings import DEFAULTS, load_settings, save_settings
 def test_defaults_include_last_save_keys():
     assert "last_profile" in DEFAULTS
     assert "last_slot" in DEFAULTS
+    assert "last_install" in DEFAULTS
     assert DEFAULTS["last_profile"] == ""
     assert DEFAULTS["last_slot"] == ""
+    assert DEFAULTS["last_install"] == ""
 
 
 def test_settings_roundtrip_last_save(tmp_path: Path):
@@ -24,6 +26,7 @@ def test_settings_roundtrip_last_save(tmp_path: Path):
             "also_autosave": True,
             "last_profile": str(tmp_path / "Profiles" / "Rockstar"),
             "last_slot": "SGTA412",
+            "last_install": str(tmp_path / "GTAIV"),
         },
         base=tmp_path,
     )
@@ -32,6 +35,7 @@ def test_settings_roundtrip_last_save(tmp_path: Path):
     assert loaded["also_autosave"] is True
     assert loaded["last_profile"].endswith("Rockstar")
     assert loaded["last_slot"] == "SGTA412"
+    assert loaded["last_install"].endswith("GTAIV")
 
 
 def test_load_settings_missing_file_returns_defaults(tmp_path: Path):
