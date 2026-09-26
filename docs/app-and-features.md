@@ -28,30 +28,34 @@ flowchart TB
 
 ## Features
 
-### Startup menu
+### Startup save gate
 
-Outlined tiles switch views with fade animation:
+On every launch, pick a Rockstar Profile and `SGTA4xx` slot, then **Continue**. Last profile/slot are remembered in settings and pre-selected next time. **Change save** is available from the home menu and Settings (not repeated in each editor).
+
+### Home menu
+
+Outlined tiles switch views with fade animation. Window size snaps per view (user-non-resizable).
 
 | View | Edits |
 |------|--------|
 | **Money** | Set / add cash |
-| **Weapons** | 10-slot loadout + ammo; Stock / Mod badges |
+| **Weapons** | Episode strip + 2×5 slot cards, picker, equipped slot |
 | **Vitality** | Health, armour, max health, max armour |
-| **Settings** | Autobackup, also-autosave, write-technique notes |
+| **Settings** | Autobackup, also-autosave, Change save |
 
 Keyboard: Tab moves focus; Enter activates; Esc returns to menu; digits `1`-`4` open views from the menu.
 
 ### Edit flow
 
 1. Quit GTA IV completely.
-2. Open Save 4Bucks and choose a view.
-3. Select Rockstar Profile and slot - status chip shows version, path, write technique, and eligibility.
+2. Open 4Bucks, Confirm/Continue on the save gate.
+3. Open a view — status chip shows slot, mission title, version, and eligibility.
 4. Apply edits (Autobackup on by default; optional also-autosave `SGTA412`).
 5. Load the save in-game.
 
-### Weapons detector
+### Weapons loadout
 
-Stock and episodic IDs (`0..57`, GTAMods) are labeled **Stock**. Unknown IDs are labeled **Mod / unknown**. When a GTA IV install is found, `weaponinfo.xml` and common mod overlay paths may resolve extra names.
+Episode strip (**IV** / **TLAD** / **TBoGT** / **All** / **Mods**) filters the picker catalog only; the 10 PlayerInfo slots stay the same. Stock and episodic IDs are labeled **stock**; unknown IDs are **mod**. When a GTA IV install is found, `weaponinfo.xml` may resolve extra names.
 
 ### Autobackup
 

@@ -1,4 +1,4 @@
-# Build Save 4Bucks - Windows onefile EXE via flet pack (x64 and/or x86)
+# Build 4Bucks - Windows onefile EXE via flet pack (x64 and/or x86)
 param(
     [switch]$SkipChecks,
     [ValidateSet('All', 'x64', 'x86')]
@@ -131,14 +131,23 @@ function Build-One {
     if (Test-Path $archDist) { Remove-Item -Recurse -Force $archDist }
     New-Item -ItemType Directory -Force -Path $archDist | Out-Null
 
+    # Bundle menu SVG icons (and window icon PNG) into the onefile EXE.
+    $menuIcons = Join-Path $root 'assets\menu'
+    $addData = @(
+        "$menuIcons;assets/menu",
+        "$(Join-Path $root 'assets\icon.png');assets"
+    )
+
     Write-Host "Running flet pack ($TargetArch) -> $name ..."
     & $flet pack (Join-Path $root 'save4bucks.py') `
         -n $name `
         -i $icon `
         --distpath $archDist `
         -y `
-        --product-name 'Save 4Bucks' `
+        --product-name '4Bucks' `
         --file-description 'GTA IV CE offline PlayerInfo save editor' `
+        --add-data $addData[0] `
+        --add-data $addData[1] `
         --hidden-import src `
         --hidden-import src.app `
         --hidden-import src.detect `
