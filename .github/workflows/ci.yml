@@ -1,6 +1,6 @@
 # Save 4Bucks - CI/CD
-# PR / push: unit tests + secret scan + pip-audit
-# Push to main: SemVer patch bump → Windows EXE (x64 + x86) → GitHub Release
+# PR / push: unit tests + secret scan + pip-audit + EXE matrix (once)
+# Push to main: prepare SemVer bump → matrix pack with bumped version → release downloads artifacts only
 name: CI
 
 on:
@@ -89,12 +89,54 @@ jobs:
       - name: pip-audit (dev)
         run: python -m pip_audit -r requirements-dev.txt
 
-  build-exe:
-    name: "2 · Build Windows EXE - ${{ matrix.arch }}"
+  prepare_version:
+    name: "1 · Prepare version bump"
     needs: [unit-tests, security-audit]
     if: |
-      github.event_name != 'push' ||
-      !contains(github.event.head_commit.message, '[skip ci]')
+      github.ref == 'refs/heads/main' &&
+      (
+        github.event_name == 'workflow_dispatch' ||
+        (
+          github.event_name == 'push' &&
+          !contains(github.event.head_commit.message, '[skip ci]')
+        )
+      )
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref_name }}
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Bump patch version
+        id: bump
+        run: python scripts/ci/bump_version.py --write-github-output
+
+      - name: Upload bumped __init__.py
+        uses: actions/upload-artifact@v4
+        with:
+          name: bumped-version
+          path: src/__init__.py
+          if-no-files-found: error
+          retention-days: 7
+
+  build-exe:
+    name: "2 · Build Windows EXE - ${{ matrix.arch }}"
+    needs: [unit-tests, security-audit, prepare_version]
+    if: |
+      always() &&
+      needs.unit-tests.result == 'success' &&
+      needs.security-audit.result == 'success' &&
+      (needs.prepare_version.result == 'success' || needs.prepare_version.result == 'skipped') &&
+      (
+        github.event_name != 'push' ||
+        !contains(github.event.head_commit.message, '[skip ci]')
+      )
     runs-on: windows-latest
     strategy:
       fail-fast: false
@@ -104,6 +146,21 @@ jobs:
           - arch: x86
     steps:
       - uses: actions/checkout@v5
+
+      - name: Download bumped version
+        if: needs.prepare_version.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: bumped-version
+          path: _bumped
+
+      - name: Apply bumped __init__.py
+        if: needs.prepare_version.result == 'success'
+        shell: pwsh
+        run: |
+          Copy-Item -Force "_bumped\__init__.py" "src\__init__.py"
+          Write-Host "Applied bumped version file:"
+          Get-Content "src\__init__.py" | Select-String '__version__'
 
       - uses: actions/setup-python@v6
         id: py
@@ -134,10 +191,12 @@ jobs:
           retention-days: 14
 
   release:
-    name: "3 · Version bump & GitHub Release"
-    needs: [unit-tests, security-audit, build-exe]
+    name: "3 · GitHub Release"
+    needs: [prepare_version, build-exe]
     if: |
       github.ref == 'refs/heads/main' &&
+      needs.prepare_version.result == 'success' &&
+      needs.build-exe.result == 'success' &&
       (
         github.event_name == 'workflow_dispatch' ||
         (
@@ -145,7 +204,7 @@ jobs:
           !contains(github.event.head_commit.message, '[skip ci]')
         )
       )
-    runs-on: windows-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     concurrency:
@@ -158,57 +217,36 @@ jobs:
           ref: ${{ github.ref_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/setup-python@v6
-        id: py64
+      - name: Download bumped version
+        uses: actions/download-artifact@v4
         with:
-          python-version: "3.11"
-          architecture: x64
-          cache: pip
-          cache-dependency-path: |
-            requirements.txt
-            requirements-dev.txt
+          name: bumped-version
+          path: _bumped
 
-      - uses: actions/setup-python@v6
-        id: py86
-        with:
-          python-version: "3.11"
-          architecture: x86
-
-      - name: Bump patch version
-        id: bump
-        shell: bash
+      - name: Apply bumped __init__.py for commit
         run: |
           set -euo pipefail
-          PY="${{ steps.py64.outputs.python-path }}"
-          "$PY" scripts/ci/bump_version.py --write-github-output
+          cp _bumped/__init__.py src/__init__.py
+          echo "Prepared version ${{ needs.prepare_version.outputs.version }}"
+          grep __version__ src/__init__.py
 
-      - name: Build EXE x64
-        shell: pwsh
-        run: |
-          powershell -ExecutionPolicy Bypass -File .\build.ps1 -SkipChecks -Arch x64 -PythonX64 "${{ steps.py64.outputs.python-path }}"
-          New-Item -ItemType Directory -Force release-assets | Out-Null
-          Copy-Item -Force dist\Save4Bucks-x64.exe release-assets\
-          Get-Item release-assets\Save4Bucks-x64.exe | Format-List Name, Length
-
-      - name: Build EXE x86
-        shell: pwsh
-        run: |
-          powershell -ExecutionPolicy Bypass -File .\build.ps1 -SkipChecks -Arch x86 -PythonX86 "${{ steps.py86.outputs.python-path }}"
-          New-Item -ItemType Directory -Force release-assets | Out-Null
-          Copy-Item -Force dist\Save4Bucks-x86.exe release-assets\
-          Get-Item release-assets\Save4Bucks-x86.exe | Format-List Name, Length
+      - name: Download EXE artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: Save4Bucks-*
+          path: release-assets
+          merge-multiple: true
 
       - name: Verify release assets
-        shell: pwsh
         run: |
-          Get-ChildItem release-assets | Format-Table Name, Length
-          if (-not (Test-Path release-assets\Save4Bucks-x64.exe)) { throw 'missing Save4Bucks-x64.exe' }
-          if (-not (Test-Path release-assets\Save4Bucks-x86.exe)) { throw 'missing Save4Bucks-x86.exe' }
+          set -euo pipefail
+          ls -la release-assets
+          test -f release-assets/Save4Bucks-x64.exe
+          test -f release-assets/Save4Bucks-x86.exe
 
       - name: Commit version bump
-        shell: bash
         env:
-          VERSION: ${{ steps.bump.outputs.version }}
+          VERSION: ${{ needs.prepare_version.outputs.version }}
           REF: ${{ github.ref_name }}
         run: |
           set -euo pipefail
@@ -217,7 +255,7 @@ jobs:
           git add src/__init__.py
           git commit -m "chore(release): bump version to ${VERSION} [skip ci]"
 
-          # Main may have moved during the dual-arch build - rebase and retry push.
+          # Main may have moved during the matrix build - rebase and retry push.
           for attempt in 1 2 3 4 5 6; do
             if git push origin "HEAD:${REF}"; then
               echo "Pushed version bump on attempt ${attempt}"
@@ -237,10 +275,9 @@ jobs:
           exit 1
 
       - name: Create tag and GitHub Release
-        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ steps.bump.outputs.version }}
+          VERSION: ${{ needs.prepare_version.outputs.version }}
         run: |
           set -euo pipefail
           TAG="v${VERSION}"

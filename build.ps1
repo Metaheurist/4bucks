@@ -138,11 +138,16 @@ function Build-One {
         --distpath $archDist `
         -y `
         --product-name 'Save 4Bucks' `
-        --file-description 'GTA IV CE offline save money editor' `
+        --file-description 'GTA IV CE offline PlayerInfo save editor' `
         --hidden-import src `
         --hidden-import src.app `
         --hidden-import src.detect `
         --hidden-import src.save_money `
+        --hidden-import src.save_weapons `
+        --hidden-import src.save_vitality `
+        --hidden-import src.playerinfo `
+        --hidden-import src.weapons_catalog `
+        --hidden-import src.weapon_detect `
         --hidden-import src.versioning `
         --hidden-import src.backup `
         --hidden-import src.settings
