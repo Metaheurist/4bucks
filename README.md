@@ -66,7 +66,7 @@ Latest: [Releases](https://github.com/Metaheurist/4bucks/releases) · [Actions](
 
 ### Documentation
 
-Long-form sections live under **`docs/`** so the main README stays short. Open them from the repo’s file tree or use the links below. Icons are SVG assets under [`docs/icons/`](docs/icons/) (referenced with `<img>` for GitHub compatibility).
+Long-form sections live under **`docs/`** so the main README stays short. Open them from the repo’s file tree or use the links below. Icons are SVG assets under [`docs/icons/`](docs/icons/) in a **GTA IV phone-menu** style (dark tile + Liberty City gold).
 
 | | |
 | :--- | :--- |

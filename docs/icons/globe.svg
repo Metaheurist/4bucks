@@ -1,3 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#57606a" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" role="img" aria-hidden="true">
-  <circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18"/><path d="M12 3a15 15 0 0 0 0 18"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-hidden="true">
+  <rect width="24" height="24" rx="3" fill="#1a2228"/>
+  <g fill="none" stroke="#e8a017" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter">
+    <circle cx="12" cy="12" r="7"/>
+    <path d="M4.5 12 H19.5"/>
+    <path d="M12 5 C9.5 8 9.5 16 12 19 M12 5 C14.5 8 14.5 16 12 19"/>
+  </g>
 </svg>
