@@ -31,6 +31,7 @@ from .save_vitality import (
 )
 from .save_weapons import read_loadout_file, write_loadout
 from .settings import load_settings, save_settings
+from .carcols_catalog import list_paint_colors, paint_label
 from .vehicles_catalog import list_vehicles, vehicle_name
 from .versioning import check_write, inspect_save, status_chip
 from .weapon_detect import (
@@ -1623,7 +1624,7 @@ class Save4BucksApp:
         install = self.active_install
         if car and car.valid:
             title = vehicle_name(car.model, install)
-            colors = ",".join(str(c) for c in car.colors)
+            colors = ", ".join(paint_label(c, install) for c in car.colors)
             body = ft.Column(
                 [
                     ft.Row(
@@ -1755,12 +1756,14 @@ class Save4BucksApp:
             except Exception:
                 pass
 
-        def _num_options(hi: int, *extra: int) -> list[ft.DropdownOption]:
-            vals = set(range(hi + 1))
+        def _paint_options(*extra: int) -> list[ft.DropdownOption]:
+            rows = list(list_paint_colors(self.active_install))
+            known = {i for i, _ in rows}
             for e in extra:
-                if e >= 0:
-                    vals.add(int(e))
-            return [ft.DropdownOption(key=str(i), text=str(i)) for i in sorted(vals)]
+                if e >= 0 and e not in known:
+                    rows.append((e, paint_label(e, self.active_install)))
+            rows.sort(key=lambda t: t[0])
+            return [ft.DropdownOption(key=str(i), text=lab) for i, lab in rows]
 
         def _styled_dd(
             label: str,
@@ -1814,33 +1817,18 @@ class Save4BucksApp:
 
         search.on_change = on_search
 
-        c1 = _styled_dd(
-            "Primary",
-            _num_options(133, pref_colors[0]),
-            str(pref_colors[0]),
-            expand=True,
-        )
-        c2 = _styled_dd(
-            "Secondary",
-            _num_options(133, pref_colors[1]),
-            str(pref_colors[1]),
-            expand=True,
-        )
-        c3 = _styled_dd(
-            "Pearl",
-            _num_options(133, pref_colors[2]),
-            str(pref_colors[2]),
-            expand=True,
-        )
-        c4 = _styled_dd(
-            "Wheel",
-            _num_options(133, pref_colors[3]),
-            str(pref_colors[3]),
-            expand=True,
-        )
+        paint_opts = _paint_options(*pref_colors)
+        c1 = _styled_dd("Primary", paint_opts, str(pref_colors[0]), expand=True)
+        c2 = _styled_dd("Secondary", list(paint_opts), str(pref_colors[1]), expand=True)
+        c3 = _styled_dd("Pearl", list(paint_opts), str(pref_colors[2]), expand=True)
+        c4 = _styled_dd("Wheel", list(paint_opts), str(pref_colors[3]), expand=True)
+        livery_opts = [
+            ft.DropdownOption(key=str(i), text=str(i))
+            for i in sorted({*range(16), max(0, pref_livery)})
+        ]
         livery_dd = _styled_dd(
             "Livery",
-            _num_options(15, pref_livery),
+            livery_opts,
             str(min(pref_livery, 255)),
             expand=False,
             width=120,
