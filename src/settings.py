@@ -1,4 +1,4 @@
-"""Persist Save 4Bucks UI settings next to the app."""
+"""Persist 4Bucks UI settings next to the app."""
 
 from __future__ import annotations
 
@@ -9,9 +9,11 @@ from .backup import app_dir
 
 SETTINGS_NAME = "save4bucks_settings.json"
 
-DEFAULTS = {
+DEFAULTS: dict = {
     "autobackup": True,
     "also_autosave": True,
+    "last_profile": "",
+    "last_slot": "",
 }
 
 
@@ -26,10 +28,14 @@ def load_settings(base: Path | None = None) -> dict:
         return data
     try:
         loaded = json.loads(path.read_text(encoding="utf-8"))
-        if isinstance(loaded, dict):
-            for k in DEFAULTS:
-                if k in loaded:
-                    data[k] = bool(loaded[k])
+        if not isinstance(loaded, dict):
+            return data
+        data["autobackup"] = bool(loaded.get("autobackup", DEFAULTS["autobackup"]))
+        data["also_autosave"] = bool(loaded.get("also_autosave", DEFAULTS["also_autosave"]))
+        lp = loaded.get("last_profile", "")
+        ls = loaded.get("last_slot", "")
+        data["last_profile"] = str(lp) if lp is not None else ""
+        data["last_slot"] = str(ls) if ls is not None else ""
     except (OSError, json.JSONDecodeError, TypeError, ValueError):
         pass
     return data
@@ -37,5 +43,10 @@ def load_settings(base: Path | None = None) -> dict:
 
 def save_settings(settings: dict, base: Path | None = None) -> None:
     path = settings_path(base)
-    out = {k: bool(settings.get(k, DEFAULTS[k])) for k in DEFAULTS}
+    out = {
+        "autobackup": bool(settings.get("autobackup", DEFAULTS["autobackup"])),
+        "also_autosave": bool(settings.get("also_autosave", DEFAULTS["also_autosave"])),
+        "last_profile": str(settings.get("last_profile") or ""),
+        "last_slot": str(settings.get("last_slot") or ""),
+    }
     path.write_text(json.dumps(out, indent=2) + "\n", encoding="utf-8")
