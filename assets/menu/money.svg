@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true">
+  <g stroke="#e0c04a" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3.5" y="6.5" width="17" height="11" rx="2"/>
+    <!-- Dollar sign instead of circle -->
+    <path d="M12 8.4 V15.6"/>
+    <path d="M14.4 9.6 C14.4 8.7 13.4 8.2 12 8.2 C10.4 8.2 9.5 8.8 9.5 9.7 C9.5 10.7 10.3 11.1 12 11.5 C13.7 11.9 14.6 12.4 14.6 13.5 C14.6 14.5 13.6 15.2 12 15.2 C10.5 15.2 9.5 14.6 9.5 13.6"/>
+  </g>
+</svg>
