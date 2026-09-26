@@ -8,6 +8,7 @@ Shipped work: [CHANGELOG.md](CHANGELOG.md).
 - Expand synthetic fixtures when new `SAVEGAME_VERSION_NUMBER` dwords appear (survey found only **57** across CE / pre-CE samples).
 - README CI build-stamp automation for the `SAVE4BUCKS_BUILD_INFO` table.
 - Confirm or drop x86 release artifacts if Flet desktop remains x64-only in practice.
+- TLAD / TBoGT-only safehouse parking layouts (IV five houses shipped).
 
 ## Later
 
@@ -16,6 +17,7 @@ Shipped work: [CHANGELOG.md](CHANGELOG.md).
 ## Recently completed
 
 - Multi-view PlayerInfo editors (money, weapons, vitality including maxima).
+- Radial home menu + Garage editor (Block 4 StoredCar spawn/edit/clear).
 - Accessibility pass (keyboard focus, contrast, tooltips, Esc / digit shortcuts).
 - Contributor guide ([CONTRIBUTING.md](../CONTRIBUTING.md)).
 - Single-build CI release path.

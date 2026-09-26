@@ -1,6 +1,6 @@
 # Contributing
 
-4Bucks is an offline Windows tool that edits GTA IV Complete Edition `SGTA4xx` saves in PlayerInfo only. Contributions must stay within that scope.
+4Bucks is an offline Windows tool that edits GTA IV Complete Edition `SGTA4xx` saves. In-scope: **PlayerInfo** (money, weapons, vitality) and **Block 4 Garages** (StoredCar parking). Do not resize blocks or rewrite Scripts, Stats, Radar, or End.
 
 ## Prerequisites
 
@@ -27,7 +27,8 @@ Dual-arch EXE: [docs/setup-and-usage.md](docs/setup-and-usage.md), `build.ps1`.
 - Run pytest and pip-audit locally ([docs/testing-and-configuration.md](docs/testing-and-configuration.md)).
 - CI must pass: unit tests, Gitleaks, pip-audit, Windows EXE matrix.
 - Use ASCII hyphens (`-`) in docs; do not commit secrets, real saves, `.venv`, `dist`, or `backups`.
-- New save fields: extend `src/playerinfo.py`, fixtures in `tests/unit/fixtures.py`, document in `docs/save-format.md`.
+- New PlayerInfo fields: extend `src/playerinfo.py`, fixtures in `tests/unit/fixtures.py`, document in `docs/save-format.md`.
+- Garage changes: extend `src/save_garage.py` / `src/safehouse_parking.py` with tests; keep block size fixed.
 
 ## Code map
 
@@ -36,14 +37,5 @@ Dual-arch EXE: [docs/setup-and-usage.md](docs/setup-and-usage.md), `build.ps1`.
 | Flet UI | `src/app.py` |
 | Write gate / technique | `src/versioning.py` |
 | Money / weapons / vitality | `src/save_*.py`, `src/playerinfo.py` |
+| Garages / vehicles | `src/save_garage.py`, `src/safehouse_parking.py`, `src/vehicles_catalog.py` |
 | CI | `.github/workflows/ci.yml`, `scripts/ci/` |
-
-## UI accessibility
-
-- Keyboard: Tab focus, Esc → menu, visible focus rings
-- Contrast: light text on dark panels; filled green buttons use dark label text
-- Labels and tooltips on interactive controls; status text selectable
-
-## Affiliation
-
-Not affiliated with Rockstar Games or Take-Two Interactive. Contributions are accepted under the same terms as this repository.

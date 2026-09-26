@@ -1,4 +1,4 @@
-# Save format (PlayerInfo)
+# Save format (PlayerInfo + Garages)
 
 Based on [GTAMods Wiki - Saves (GTA 4)](https://gtamods.com/wiki/Saves_(GTA_4)) and local CE verification.
 
@@ -36,7 +36,33 @@ Offsets below are relative to **PlayerInfo start** (`BLOCK` + `0x14`):
 | +0x5c | uint32[10] | weapon IDs |
 | +0x84 | uint16[10] | weapons ammo |
 
-4Bucks patches these fields in place (money and display money kept equal). Locator: `src/playerinfo.py`.
+4Bucks patches these fields in place (money and display money kept equal). Locator: `src/playerinfo.py`. Technique: `PLAYERINFO_INPLACE_V57`.
+
+## Garages (Block 4)
+
+Verified on CE `SGTA4xx` (block size `0x10F8`). Payload starts after `BLOCK` + size dword (`block_offset + 9`).
+
+| Payload offset | Type | Field |
+|----------------|------|-------|
+| 0x000B | uint32 | safehouse garage count (typically 5) |
+| 0x000F | StoredCar[20] | parked cars (72 bytes each) |
+| 0x05AF | Garage[40] | garage definitions (not edited) |
+
+### StoredCar (72 bytes)
+
+| Offset | Type | Field |
+|--------|------|-------|
+| 0x00 | float[3] | position |
+| 0x0C | uint32 | handling flags |
+| 0x10 | uint16 | model index |
+| 0x30 | uint16 | occupied mark (`0x0011` when parked) |
+| 0x32 | uint8[4] | colors |
+| 0x38 | uint32 | extras |
+| 0x3C | uint32 | livery |
+| 0x43 | uint8[3] | rotation |
+| 0x46 | uint16 | flags (`Valid` + proof bits; wiki listed 0x48 but that is past the 72-byte struct) |
+
+Occupied slots use `model != 0`. Spawns copy curated safehouse parking poses from `src/safehouse_parking.py`. Technique: `GARAGES_INPLACE_V57`. Module: `src/save_garage.py`.
 
 ## Checksum
 
@@ -44,4 +70,4 @@ Per the wiki, the trailing checksum is ignored by the PC game on load. The edito
 
 ## Unchanged regions
 
-File length, block sizes, Scripts, Stats, Radar, and End block are never modified.
+File length, block sizes, Scripts, Stats, Radar, Garage geometry array, and End block are never modified.

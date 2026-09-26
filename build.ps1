@@ -154,6 +154,9 @@ function Build-One {
         --hidden-import src.save_money `
         --hidden-import src.save_weapons `
         --hidden-import src.save_vitality `
+        --hidden-import src.save_garage `
+        --hidden-import src.safehouse_parking `
+        --hidden-import src.vehicles_catalog `
         --hidden-import src.playerinfo `
         --hidden-import src.weapons_catalog `
         --hidden-import src.weapon_detect `
