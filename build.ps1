@@ -126,11 +126,16 @@ function Build-One {
 
     $name = "Save4Bucks-$TargetArch"
     $icon = Join-Path $root 'assets\icon.ico'
+    # Pack into a per-arch folder so a later arch build does not wipe siblings in dist/.
+    $archDist = Join-Path $root "dist\$TargetArch"
+    if (Test-Path $archDist) { Remove-Item -Recurse -Force $archDist }
+    New-Item -ItemType Directory -Force -Path $archDist | Out-Null
+
     Write-Host "Running flet pack ($TargetArch) -> $name ..."
     & $flet pack (Join-Path $root 'save4bucks.py') `
         -n $name `
         -i $icon `
-        --distpath (Join-Path $root 'dist') `
+        --distpath $archDist `
         -y `
         --product-name 'Save 4Bucks' `
         --file-description 'GTA IV CE offline save money editor' `
@@ -143,8 +148,13 @@ function Build-One {
         --hidden-import src.settings
     if ($LASTEXITCODE -ne 0) { throw "flet pack failed for $TargetArch" }
 
-    $exe = Join-Path $root "dist\$name.exe"
-    if (-not (Test-Path $exe)) { throw "Build failed: $exe not found" }
+    $built = Join-Path $archDist "$name.exe"
+    if (-not (Test-Path $built)) { throw "Build failed: $built not found" }
+
+    $distRoot = Join-Path $root 'dist'
+    New-Item -ItemType Directory -Force -Path $distRoot | Out-Null
+    $exe = Join-Path $distRoot "$name.exe"
+    Copy-Item -Force $built $exe
     Write-Host "Built: $exe"
     Get-Item $exe | Format-List Name, Length, LastWriteTime
 }

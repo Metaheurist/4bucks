@@ -182,11 +182,24 @@ jobs:
         shell: pwsh
         run: |
           powershell -ExecutionPolicy Bypass -File .\build.ps1 -SkipChecks -Arch x64 -PythonX64 "${{ steps.py64.outputs.python-path }}"
+          New-Item -ItemType Directory -Force release-assets | Out-Null
+          Copy-Item -Force dist\Save4Bucks-x64.exe release-assets\
+          Get-Item release-assets\Save4Bucks-x64.exe | Format-List Name, Length
 
       - name: Build EXE x86
         shell: pwsh
         run: |
           powershell -ExecutionPolicy Bypass -File .\build.ps1 -SkipChecks -Arch x86 -PythonX86 "${{ steps.py86.outputs.python-path }}"
+          New-Item -ItemType Directory -Force release-assets | Out-Null
+          Copy-Item -Force dist\Save4Bucks-x86.exe release-assets\
+          Get-Item release-assets\Save4Bucks-x86.exe | Format-List Name, Length
+
+      - name: Verify release assets
+        shell: pwsh
+        run: |
+          Get-ChildItem release-assets | Format-Table Name, Length
+          if (-not (Test-Path release-assets\Save4Bucks-x64.exe)) { throw 'missing Save4Bucks-x64.exe' }
+          if (-not (Test-Path release-assets\Save4Bucks-x86.exe)) { throw 'missing Save4Bucks-x86.exe' }
 
       - name: Commit version bump
         shell: bash
@@ -200,7 +213,7 @@ jobs:
           git add src/__init__.py
           git commit -m "chore(release): bump version to ${VERSION} [skip ci]"
 
-          # Main may have moved during the dual-arch build — rebase and retry push.
+          # Main may have moved during the dual-arch build - rebase and retry push.
           for attempt in 1 2 3 4 5 6; do
             if git push origin "HEAD:${REF}"; then
               echo "Pushed version bump on attempt ${attempt}"
@@ -209,7 +222,7 @@ jobs:
             echo "Push rejected (attempt ${attempt}); fetching and rebasing onto origin/${REF}..."
             git fetch origin "${REF}"
             if ! git rebase "origin/${REF}"; then
-              echo "Rebase conflict — keeping bumped src/__init__.py"
+              echo "Rebase conflict - keeping bumped src/__init__.py"
               git checkout --ours -- src/__init__.py || true
               git add src/__init__.py
               GIT_EDITOR=true git rebase --continue
@@ -228,17 +241,17 @@ jobs:
           set -euo pipefail
           TAG="v${VERSION}"
           if git ls-remote --tags origin "refs/tags/${TAG}" | grep -q "${TAG}"; then
-            echo "Tag ${TAG} already exists on remote — skipping tag create"
+            echo "Tag ${TAG} already exists on remote - skipping tag create"
           else
             git tag -a "${TAG}" -m "Save 4Bucks ${VERSION}"
             git push origin "${TAG}"
           fi
 
           if gh release view "${TAG}" >/dev/null 2>&1; then
-            echo "Release ${TAG} already exists — uploading assets with clobber"
+            echo "Release ${TAG} already exists - uploading assets with clobber"
             gh release upload "${TAG}" \
-              "dist/Save4Bucks-x64.exe#Save4Bucks-x64.exe" \
-              "dist/Save4Bucks-x86.exe#Save4Bucks-x86.exe" \
+              "release-assets/Save4Bucks-x64.exe#Save4Bucks-x64.exe" \
+              "release-assets/Save4Bucks-x86.exe#Save4Bucks-x86.exe" \
               --clobber
           else
             NOTES="$(printf '%s\n' \
@@ -255,6 +268,6 @@ jobs:
             gh release create "${TAG}" \
               --title "Save 4Bucks ${VERSION}" \
               --notes "${NOTES}" \
-              "dist/Save4Bucks-x64.exe#Save4Bucks-x64.exe" \
-              "dist/Save4Bucks-x86.exe#Save4Bucks-x86.exe"
+              "release-assets/Save4Bucks-x64.exe#Save4Bucks-x64.exe" \
+              "release-assets/Save4Bucks-x86.exe#Save4Bucks-x86.exe"
           fi

@@ -65,4 +65,5 @@ The release job needs `contents: write` (default `GITHUB_TOKEN` is enough unless
 | No 32-bit Python | Install Python 3.11 Windows **32-bit**, or pass `-PythonX86` |
 | `flet pack` / x86 fails | Flet desktop client is primarily **x64**; try `-Arch x64` first |
 | Wrong bitness EXE | Pack with the matching interpreter (`-PythonX64` / `-PythonX86`) |
-| Release push rejected | Fixed in CI with rebase/retry; re-run the failed workflow if needed |
+| `flet pack` wipes previous EXE | Pack uses `dist\{arch}\` then copies into `dist\`; both EXEs should coexist |
+| Release missing `dist\*.exe` | CI stages copies under `release-assets\` before tagging |
