@@ -57,7 +57,7 @@ BTN_ON_GREEN = "#12161a"
 # Sized to content — no scrollbars. Includes brand + status chrome.
 WINDOW_SIZES: dict[str, tuple[int, int]] = {
     "gate": (640, 540),
-    "menu": (560, 560),
+    "menu": (520, 560),
     "money": (600, 290),
     "weapons": (780, 680),
     "vitality": (620, 360),
@@ -374,19 +374,7 @@ class Save4BucksApp:
 
     # --- icons / menu ---
 
-    def _menu_icon(self, name: str) -> ft.Control:
-        path = _resource_path("assets", "menu", f"{name}.svg")
-        if path.is_file():
-            return ft.Image(
-                src=f"menu/{name}.svg",
-                width=48,
-                height=48,
-                fit=ft.BoxFit.CONTAIN,
-                exclude_from_semantics=True,
-            )
-        return ft.Container(width=48, height=48)
-
-    def _gold_icon(self, name: str, *, size: int = 22) -> ft.Control:
+    def _menu_icon(self, name: str, *, size: int = 40) -> ft.Control:
         path = _resource_path("assets", "menu", f"{name}.svg")
         if path.is_file():
             return ft.Image(
@@ -398,38 +386,19 @@ class Save4BucksApp:
             )
         return ft.Container(width=size, height=size)
 
-    def _menu_tile(
-        self, title: str, blurb: str, view: str, shortcut: str, *, icon: str
-    ) -> ft.Control:
-        tip = f"{title} - {blurb}. Press {shortcut}."
-        return ft.Container(
-            content=ft.OutlinedButton(
-                content=ft.Column(
-                    [
-                        self._menu_icon(icon),
-                        ft.Text(title, size=15, weight=ft.FontWeight.W_600, color=GOLD),
-                    ],
-                    spacing=6,
-                    tight=True,
-                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                    alignment=ft.MainAxisAlignment.CENTER,
-                ),
-                style=ft.ButtonStyle(
-                    bgcolor=PANEL,
-                    side=ft.BorderSide(1.5, GOLD),
-                    shape=ft.RoundedRectangleBorder(radius=6),
-                    padding=ft.Padding.symmetric(horizontal=12, vertical=10),
-                    overlay_color="#e0c04a22",
-                ),
-                tooltip=tip,
-                expand=True,
-                on_click=lambda _e, v=view: self._goto(v),
-            ),
-            expand=True,
-            height=118,
-        )
+    def _gold_icon(self, name: str, *, size: int = 22) -> ft.Control:
+        return self._menu_icon(name, size=size)
 
-    def _wheel_tile(
+    def _wheel_hover(self, e: ft.ControlEvent) -> None:
+        ctrl = e.control
+        try:
+            hovering = e.data == "true"
+            ctrl.bgcolor = "#e0c04a22" if hovering else "#00000000"
+            ctrl.update()
+        except Exception:
+            pass
+
+    def _pie_slice(
         self,
         title: str,
         blurb: str,
@@ -437,158 +406,180 @@ class Save4BucksApp:
         shortcut: str,
         *,
         icon: str,
-        size: int = 108,
+        left: float,
+        top: float,
+        size: float,
+        corner: str,
     ) -> ft.Control:
+        """Clickable quarter of the wheel; label sits on the 45° bisector inside the arc."""
         tip = f"{title} - {blurb}. Press {shortcut}."
+        # Full-wheel radius == quadrant size. Place content on the wedge bisector
+        # so the icon+label fill the fat of the slice without leaving the circle clip.
+        icon_sz = 50
+        label_sz = 15
+        gap = 5
+        content_h = icon_sz + gap + int(label_sz * 1.35)
+        content_w = max(icon_sz + 8, len(title) * 9 + 8)
+        radius = size
+        # Midway between hub (~0.28R) and rim, keeping bbox inside the circle
+        dist = radius * 0.58
+        diag = 0.70710678
+        # Wheel centre relative to this quadrant box
+        if corner == "nw":
+            cx, cy = size - dist * diag, size - dist * diag
+        elif corner == "ne":
+            cx, cy = dist * diag, size - dist * diag
+        elif corner == "sw":
+            cx, cy = size - dist * diag, dist * diag
+        else:  # se
+            cx, cy = dist * diag, dist * diag
         return ft.Container(
-            content=ft.OutlinedButton(
-                content=ft.Column(
-                    [
-                        self._menu_icon(icon),
-                        ft.Text(title, size=13, weight=ft.FontWeight.W_600, color=GOLD),
-                    ],
-                    spacing=4,
-                    tight=True,
-                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                    alignment=ft.MainAxisAlignment.CENTER,
-                ),
-                style=ft.ButtonStyle(
-                    bgcolor=PANEL,
-                    side=ft.BorderSide(1.5, GOLD),
-                    shape=ft.RoundedRectangleBorder(radius=size // 2),
-                    padding=ft.Padding.all(10),
-                    overlay_color="#e0c04a33",
-                ),
-                tooltip=tip,
-                width=size,
-                height=size,
-                on_click=lambda _e, v=view: self._goto(v),
-            ),
+            left=left,
+            top=top,
             width=size,
             height=size,
-            animate=ft.Animation(180, ft.AnimationCurve.EASE_OUT),
-            animate_scale=ft.Animation(180, ft.AnimationCurve.EASE_OUT),
-            scale=1.0,
-            on_hover=lambda e, c=None: self._wheel_hover(e),
+            bgcolor="#00000000",
+            tooltip=tip,
+            ink=True,
+            on_click=lambda _e, v=view: self._goto(v),
+            on_hover=self._wheel_hover,
+            content=ft.Stack(
+                [
+                    ft.Container(
+                        left=cx - content_w / 2,
+                        top=cy - content_h / 2,
+                        width=content_w,
+                        height=content_h,
+                        alignment=ft.Alignment.CENTER,
+                        content=ft.Column(
+                            [
+                                self._menu_icon(icon, size=icon_sz),
+                                ft.Text(
+                                    title,
+                                    size=label_sz,
+                                    weight=ft.FontWeight.W_700,
+                                    color=GOLD,
+                                    text_align=ft.TextAlign.CENTER,
+                                ),
+                            ],
+                            spacing=gap,
+                            tight=True,
+                            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                            alignment=ft.MainAxisAlignment.CENTER,
+                        ),
+                    )
+                ],
+                width=size,
+                height=size,
+            ),
+            animate=ft.Animation(160, ft.AnimationCurve.EASE_OUT),
         )
-
-    def _wheel_hover(self, e: ft.ControlEvent) -> None:
-        ctrl = e.control
-        try:
-            ctrl.scale = 1.06 if e.data == "true" else 1.0
-            ctrl.update()
-        except Exception:
-            pass
 
     def _wheel_center_settings(self, *, size: int = 96) -> ft.Control:
         tip = "Settings - Backup and options. Press 5 or S."
         return ft.Container(
-            content=ft.OutlinedButton(
-                content=ft.Column(
-                    [
-                        self._menu_icon("settings"),
-                        ft.Text("Settings", size=12, weight=ft.FontWeight.W_600, color=GOLD),
-                    ],
-                    spacing=2,
-                    tight=True,
-                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                    alignment=ft.MainAxisAlignment.CENTER,
-                ),
-                style=ft.ButtonStyle(
-                    bgcolor="#243028",
-                    side=ft.BorderSide(2, GOLD),
-                    shape=ft.RoundedRectangleBorder(radius=size // 2),
-                    padding=ft.Padding.all(8),
-                    overlay_color="#e0c04a44",
-                ),
-                tooltip=tip,
-                width=size,
-                height=size,
-                on_click=lambda _e: self._goto("settings"),
-            ),
             width=size,
             height=size,
-            animate_scale=ft.Animation(160, ft.AnimationCurve.EASE_OUT),
-            scale=1.0,
-            on_hover=lambda e: self._wheel_hover(e),
+            alignment=ft.Alignment.CENTER,
+            bgcolor="#243028",
+            border=ft.Border.all(2, GOLD),
+            border_radius=size / 2,
+            tooltip=tip,
+            ink=True,
+            on_click=lambda _e: self._goto("settings"),
+            on_hover=self._wheel_hover,
+            content=ft.Column(
+                [
+                    self._menu_icon("settings", size=36),
+                    ft.Text("Settings", size=12, weight=ft.FontWeight.W_700, color=GOLD),
+                ],
+                spacing=4,
+                tight=True,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                alignment=ft.MainAxisAlignment.CENTER,
+            ),
+            animate=ft.Animation(160, ft.AnimationCurve.EASE_OUT),
         )
 
     def _build_menu(self) -> ft.Control:
-        wheel = 400
-        tile = 108
-        center = 96
-        mid = (wheel - tile) / 2
-        cmid = (wheel - center) / 2
+        """
+        Full circle split into four 90° segment buttons, Settings hub in the middle.
+        """
+        wheel = 360
+        half = wheel / 2
+        hub = 100
+        wheel_bg = _resource_path("assets", "menu", "wheel.svg")
+        bg = (
+            ft.Image(
+                src="menu/wheel.svg",
+                width=wheel,
+                height=wheel,
+                fit=ft.BoxFit.FILL,
+                exclude_from_semantics=True,
+            )
+            if wheel_bg.is_file()
+            else ft.Container(
+                width=wheel,
+                height=wheel,
+                bgcolor=PANEL,
+                border=ft.Border.all(2, GOLD),
+                border_radius=half,
+            )
+        )
+        slices = [
+            # NW Money
+            ("Money", "Set or add cash", "money", "1", "money", 0.0, 0.0, "nw"),
+            # NE Weapons
+            ("Weapons", "Guns and ammo", "weapons", "2", "weapons", half, 0.0, "ne"),
+            # SW Vitality
+            ("Vitality", "Health and armour", "vitality", "3", "vitality", 0.0, half, "sw"),
+            # SE Garage
+            ("Garage", "Safehouse cars", "garage", "4", "garage", half, half, "se"),
+        ]
+        controls: list[ft.Control] = [bg]
+        for title, blurb, view, shortcut, icon, left, top, corner in slices:
+            controls.append(
+                self._pie_slice(
+                    title,
+                    blurb,
+                    view,
+                    shortcut,
+                    icon=icon,
+                    left=left,
+                    top=top,
+                    size=half,
+                    corner=corner,
+                )
+            )
+        controls.append(
+            ft.Container(
+                content=self._wheel_center_settings(size=hub),
+                left=(wheel - hub) / 2,
+                top=(wheel - hub) / 2,
+                width=hub,
+                height=hub,
+            )
+        )
         stack = ft.Stack(
-            [
-                # Outer ring: Money N, Weapons E, Vitality S, Garage W
-                ft.Container(
-                    content=self._wheel_tile(
-                        "Money", "Set or add cash", "money", "1", icon="money", size=tile
-                    ),
-                    left=mid,
-                    top=8,
-                    width=tile,
-                    height=tile,
-                ),
-                ft.Container(
-                    content=self._wheel_tile(
-                        "Weapons",
-                        "Guns and ammo",
-                        "weapons",
-                        "2",
-                        icon="weapons",
-                        size=tile,
-                    ),
-                    left=wheel - tile - 8,
-                    top=mid,
-                    width=tile,
-                    height=tile,
-                ),
-                ft.Container(
-                    content=self._wheel_tile(
-                        "Vitality",
-                        "Health and armour",
-                        "vitality",
-                        "3",
-                        icon="vitality",
-                        size=tile,
-                    ),
-                    left=mid,
-                    top=wheel - tile - 8,
-                    width=tile,
-                    height=tile,
-                ),
-                ft.Container(
-                    content=self._wheel_tile(
-                        "Garage",
-                        "Safehouse cars",
-                        "garage",
-                        "4",
-                        icon="garage",
-                        size=tile,
-                    ),
-                    left=8,
-                    top=mid,
-                    width=tile,
-                    height=tile,
-                ),
-                # Center Settings
-                ft.Container(
-                    content=self._wheel_center_settings(size=center),
-                    left=cmid,
-                    top=cmid,
-                    width=center,
-                    height=center,
-                ),
-            ],
+            controls,
             width=wheel,
             height=wheel,
+            clip_behavior=ft.ClipBehavior.HARD_EDGE,
         )
         return ft.Column(
             [
                 self.active_chip,
-                ft.Container(content=stack, alignment=ft.Alignment.CENTER, expand=True),
+                ft.Container(
+                    content=ft.Container(
+                        content=stack,
+                        width=wheel,
+                        height=wheel,
+                        border_radius=half,
+                        clip_behavior=ft.ClipBehavior.HARD_EDGE,
+                    ),
+                    alignment=ft.Alignment.CENTER,
+                    expand=True,
+                ),
                 ft.TextButton(
                     "Change save",
                     style=ft.ButtonStyle(color=MUTED),
@@ -1648,7 +1639,35 @@ class Save4BucksApp:
                         ],
                         vertical_alignment=ft.CrossAxisAlignment.CENTER,
                     ),
-                    ft.Text(f"Colors {colors} · Livery {car.livery}", size=11, color=MUTED),
+                    ft.Text(
+                        f"Colors {colors} · Livery {car.livery}"
+                        + (
+                            " · "
+                            + "+".join(
+                                p
+                                for p, on in (
+                                    ("Bullet", car.bullet_proof),
+                                    ("Fire", car.fire_proof),
+                                    ("Expl", car.explosion_proof),
+                                    ("Coll", car.collision_proof),
+                                    ("Melee", car.melee_proof),
+                                )
+                                if on
+                            )
+                            if any(
+                                (
+                                    car.bullet_proof,
+                                    car.fire_proof,
+                                    car.explosion_proof,
+                                    car.collision_proof,
+                                    car.melee_proof,
+                                )
+                            )
+                            else ""
+                        ),
+                        size=11,
+                        color=MUTED,
+                    ),
                     ft.Row(
                         [
                             ft.OutlinedButton(
@@ -1711,62 +1730,210 @@ class Save4BucksApp:
         self._vehicle_picker_mode = mode
         self._vehicle_picker_spot = (self._garage_safehouse, spot_index)
         self._vehicle_picker_car_index = car_index
+
         vehicles = list_vehicles(self.active_install)
-        options = [
+        all_opts = [
             ft.DropdownOption(key=str(i), text=f"{name}  [{i}]") for i, name in vehicles
         ]
-        dd = ft.Dropdown(
-            label="Vehicle",
-            options=options[:400],
+
+        pref_model: int | None = None
+        pref_colors = (0, 0, 0, 0)
+        pref_livery = 0
+        pref_bullet = pref_fire = pref_explosion = pref_collision = pref_melee = False
+        if mode == "edit" and car_index is not None and self.active_slot is not None:
+            try:
+                cars = read_stored_cars_file(self.active_slot.path)
+                existing = cars[car_index]
+                pref_model = existing.model
+                pref_colors = existing.colors
+                pref_livery = int(existing.livery) & 0xFF
+                pref_bullet = existing.bullet_proof
+                pref_fire = existing.fire_proof
+                pref_explosion = existing.explosion_proof
+                pref_collision = existing.collision_proof
+                pref_melee = existing.melee_proof
+            except Exception:
+                pass
+
+        def _num_options(hi: int, *extra: int) -> list[ft.DropdownOption]:
+            vals = set(range(hi + 1))
+            for e in extra:
+                if e >= 0:
+                    vals.add(int(e))
+            return [ft.DropdownOption(key=str(i), text=str(i)) for i in sorted(vals)]
+
+        def _styled_dd(
+            label: str,
+            options: list[ft.DropdownOption],
+            value: str | None,
+            *,
+            expand: bool = True,
+            width: float | None = None,
+        ) -> ft.Dropdown:
+            return ft.Dropdown(
+                label=label,
+                options=options,
+                value=value,
+                border_color=GREEN_HI,
+                focused_border_color=FOCUS,
+                label_style=ft.TextStyle(color=MUTED),
+                text_style=ft.TextStyle(color=FG),
+                expand=expand,
+                width=width,
+            )
+
+        search = ft.TextField(
+            label="Search",
+            hint_text="Filter by name…",
+            value="",
             border_color=GREEN_HI,
             focused_border_color=FOCUS,
             label_style=ft.TextStyle(color=MUTED),
             text_style=ft.TextStyle(color=FG),
             expand=True,
         )
-        idx_field = ft.TextField(
-            label="Model index",
-            value="",
-            width=120,
-            border_color=GREEN_HI,
-            focused_border_color=FOCUS,
-            label_style=ft.TextStyle(color=MUTED),
-            text_style=ft.TextStyle(color=FG),
+        dd = _styled_dd(
+            "Vehicle",
+            all_opts,
+            str(pref_model) if pref_model and pref_model > 0 else None,
         )
+
+        def on_search(_e=None) -> None:
+            q = (search.value or "").strip().lower()
+            if not q:
+                dd.options = all_opts
+            else:
+                dd.options = [
+                    o
+                    for o in all_opts
+                    if q in (o.text or "").lower() or q == (o.key or "")
+                ]
+            if dd.value and not any(o.key == dd.value for o in (dd.options or [])):
+                dd.value = None
+            self.page.update()
+
+        search.on_change = on_search
+
+        c1 = _styled_dd(
+            "Primary",
+            _num_options(133, pref_colors[0]),
+            str(pref_colors[0]),
+            expand=True,
+        )
+        c2 = _styled_dd(
+            "Secondary",
+            _num_options(133, pref_colors[1]),
+            str(pref_colors[1]),
+            expand=True,
+        )
+        c3 = _styled_dd(
+            "Pearl",
+            _num_options(133, pref_colors[2]),
+            str(pref_colors[2]),
+            expand=True,
+        )
+        c4 = _styled_dd(
+            "Wheel",
+            _num_options(133, pref_colors[3]),
+            str(pref_colors[3]),
+            expand=True,
+        )
+        livery_dd = _styled_dd(
+            "Livery",
+            _num_options(15, pref_livery),
+            str(min(pref_livery, 255)),
+            expand=False,
+            width=120,
+        )
+
+        cb_style = ft.TextStyle(color=FG, size=12)
+
+        def _proof_cb(label: str, value: bool) -> ft.Checkbox:
+            return ft.Checkbox(
+                label=label,
+                value=value,
+                active_color=GOLD,
+                label_style=cb_style,
+            )
+
+        proof_bullet = _proof_cb("Bullet", pref_bullet)
+        proof_fire = _proof_cb("Fire", pref_fire)
+        proof_explosion = _proof_cb("Explosion", pref_explosion)
+        proof_collision = _proof_cb("Collision", pref_collision)
+        proof_melee = _proof_cb("Melee", pref_melee)
 
         def close(_e=None) -> None:
             self.page.pop_dialog()
 
         def apply(_e=None) -> None:
-            raw = (dd.value or idx_field.value or "").strip()
-            if dd.value:
-                raw = dd.value.strip()
+            raw = (dd.value or "").strip()
             try:
                 mid = int(raw)
             except ValueError:
-                self._alert(APP_NAME, "Pick a vehicle or enter a model index.", error=True)
+                self._alert(APP_NAME, "Pick a vehicle from the list.", error=True)
                 return
             if mid <= 0:
-                self._alert(APP_NAME, "Model index must be positive.", error=True)
+                self._alert(APP_NAME, "Pick a vehicle from the list.", error=True)
                 return
+
+            def _ci(ctrl: ft.Dropdown, fallback: int = 0) -> int:
+                try:
+                    return max(0, min(255, int((ctrl.value or str(fallback)).strip())))
+                except ValueError:
+                    return fallback
+
+            colors = (_ci(c1, pref_colors[0]), _ci(c2, pref_colors[1]), _ci(c3, pref_colors[2]), _ci(c4, pref_colors[3]))
+            try:
+                liv = max(0, int((livery_dd.value or "0").strip()))
+            except ValueError:
+                liv = 0
+            flags = proofs_to_flags(
+                bullet=bool(proof_bullet.value),
+                fire=bool(proof_fire.value),
+                explosion=bool(proof_explosion.value),
+                collision=bool(proof_collision.value),
+                melee=bool(proof_melee.value),
+                valid=True,
+            )
             close()
             if mode == "spawn":
-                self._garage_spawn(mid)
+                self._garage_spawn(mid, colors=colors, livery=liv, flags=flags)
             else:
                 if car_index is None:
                     return
-                self._garage_change_model(car_index, mid)
+                self._garage_change_model(
+                    car_index, mid, colors=colors, livery=liv, flags=flags
+                )
 
         self.page.show_dialog(
             ft.AlertDialog(
                 modal=True,
                 title=ft.Text("Pick vehicle", color=GOLD),
                 content=ft.Column(
-                    [dd, idx_field],
+                    [
+                        search,
+                        dd,
+                        ft.Text("Customize", size=13, weight=ft.FontWeight.W_600, color=GOLD),
+                        ft.Row([c1, c2], spacing=8),
+                        ft.Row([c3, c4, livery_dd], spacing=8),
+                        ft.Text("Proofs", size=12, color=MUTED),
+                        ft.Row(
+                            [
+                                proof_bullet,
+                                proof_fire,
+                                proof_explosion,
+                                proof_collision,
+                                proof_melee,
+                            ],
+                            wrap=True,
+                            spacing=4,
+                        ),
+                    ],
                     tight=True,
                     spacing=10,
-                    width=420,
-                    height=140,
+                    width=440,
+                    height=360,
+                    scroll=ft.ScrollMode.AUTO,
                 ),
                 actions=[
                     ft.TextButton(
@@ -1813,7 +1980,15 @@ class Save4BucksApp:
 
         self._confirm_paths_generic(slot, go)
 
-    def _garage_change_model(self, car_index: int, model: int) -> None:
+    def _garage_change_model(
+        self,
+        car_index: int,
+        model: int,
+        *,
+        colors: tuple[int, int, int, int] | None = None,
+        livery: int | None = None,
+        flags: int | None = None,
+    ) -> None:
         slot = self.active_slot
         if slot is None or not self._gate_write(slot):
             return
@@ -1821,20 +1996,26 @@ class Save4BucksApp:
         def go() -> None:
             try:
                 allow = "Non-CE" in check_write(slot.path, allow_non_ce_path=False).reason
+                kwargs = dict(
+                    model=model,
+                    colors=colors,
+                    livery=livery,
+                    flags=flags,
+                )
                 update_stored_car(
                     slot.path,
                     car_index,
-                    model=model,
                     backup=bool(self._settings.get("autobackup", True)),
                     allow_non_ce_path=allow,
+                    **kwargs,
                 )
                 for p in self.targets_for(slot)[1:]:
                     update_stored_car(
                         p,
                         car_index,
-                        model=model,
                         backup=False,
                         allow_non_ce_path=True,
+                        **kwargs,
                     )
                 self.set_status(
                     f"Slot {car_index} → {vehicle_name(model, self.active_install)}"
@@ -1845,11 +2026,19 @@ class Save4BucksApp:
 
         self._confirm_paths_generic(slot, go)
 
-    def _garage_spawn(self, model: int) -> None:
+    def _garage_spawn(
+        self,
+        model: int,
+        *,
+        colors: tuple[int, int, int, int] = (0, 0, 0, 0),
+        livery: int = 0,
+        flags: int | None = None,
+    ) -> None:
         slot = self.active_slot
         if slot is None or not self._gate_write(slot):
             return
         sid = self._garage_safehouse
+        use_flags = FLAG_VALID if flags is None else int(flags)
 
         def go() -> None:
             try:
@@ -1858,7 +2047,9 @@ class Save4BucksApp:
                     slot.path,
                     sid,
                     model=model,
-                    flags=proofs_to_flags(valid=True),
+                    colors=colors,
+                    livery=livery,
+                    flags=use_flags,
                     backup=bool(self._settings.get("autobackup", True)),
                     allow_non_ce_path=allow,
                 )
@@ -1868,7 +2059,9 @@ class Save4BucksApp:
                             p,
                             sid,
                             model=model,
-                            flags=FLAG_VALID,
+                            colors=colors,
+                            livery=livery,
+                            flags=use_flags,
                             backup=False,
                             allow_non_ce_path=True,
                         )

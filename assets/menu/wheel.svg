@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-hidden="true">
+  <!-- Four 90° segments forming one circle; hollow hub for Settings -->
+  <circle cx="200" cy="200" r="196" fill="#1a2228" stroke="#e0c04a" stroke-width="3"/>
+  <line x1="200" y1="4" x2="200" y2="396" stroke="#e0c04a" stroke-width="2.2"/>
+  <line x1="4" y1="200" x2="396" y2="200" stroke="#e0c04a" stroke-width="2.2"/>
+  <circle cx="200" cy="200" r="58" fill="#12161a" stroke="#e0c04a" stroke-width="2.5"/>
+</svg>

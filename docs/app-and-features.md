@@ -37,7 +37,7 @@ On every launch, pick a Rockstar Profile and `SGTA4xx` slot, then **Continue**. 
 
 ### Home menu (radial wheel)
 
-GTA-style selector: outer ring **Money**, **Weapons**, **Vitality**, **Garage**; **Settings** in the center. Window size snaps per view (user-non-resizable).
+GTA-style **pie wheel**: one circle split into four **90°** segment buttons (Money, Weapons, Vitality, Garage) with **Settings** as the hub in the middle. Window size snaps per view (user-non-resizable).
 
 | Control | Opens |
 |---------|--------|

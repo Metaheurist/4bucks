@@ -1,9 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true">
   <g stroke="#e0c04a" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M4.5 15.5 h15"/>
-    <path d="M6 15.5 l1.6-5.2 c0.2-0.6 0.7-1 1.3-1 h6.2 c0.6 0 1.1 0.4 1.3 1 L18 15.5"/>
-    <circle cx="8" cy="15.5" r="1.6"/>
-    <circle cx="16" cy="15.5" r="1.6"/>
-    <path d="M9 9.3 h6"/>
+    <path d="M4 20 V10 L12 4.5 L20 10 V20"/>
+    <path d="M4 10 H20"/>
+    <!-- Open door hole -->
+    <rect x="7.5" y="11" width="9" height="9"/>
+    <!-- Car -->
+    <path d="M8.5 20 h7"/>
+    <path d="M9.2 20 l0.8-2.2 h3.8 l0.8 2.2"/>
+    <circle cx="10.4" cy="20" r="0.95"/>
+    <circle cx="13.6" cy="20" r="0.95"/>
   </g>
 </svg>

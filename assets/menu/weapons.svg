@@ -1,9 +1,14 @@
-﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true">
-  <path
-    d="M2 9.5h14v4H12v2c0 1.5 1 2.5 2.5 2.5V20h-3c-3 0-4.5-2-4.5-5.5H2v-5zM16 13.5h2.5l1.5 5.5h2.5L20.5 13.5H16z"
-    stroke="#e0c04a"
-    stroke-width="1.7"
-    stroke-linejoin="round"
-    stroke-linecap="round"
-  />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true">
+  <g stroke="#e0c04a" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Barrel + slide -->
+    <rect x="3" y="8.5" width="14" height="3.2" rx="0.6"/>
+    <!-- Muzzle -->
+    <path d="M17 9.2 H20.5 V11 H17"/>
+    <!-- Grip -->
+    <path d="M5.5 11.7 L4.8 18.2 c0 0.6 0.4 1.1 1 1.1 H7.8 c0.55 0 1-0.4 1.05-0.95 L9.5 11.7"/>
+    <!-- Trigger guard -->
+    <path d="M9.5 11.7 H12.8 c0.7 0 1.2 0.5 1.2 1.15 v0.9 c0 0.65-0.5 1.15-1.2 1.15 H9.8"/>
+    <!-- Trigger -->
+    <path d="M10.8 11.7 V13.8"/>
+  </g>
 </svg>
