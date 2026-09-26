@@ -32,7 +32,7 @@ from .save_vitality import (
 from .save_weapons import read_loadout_file, write_loadout
 from .settings import load_settings, save_settings
 from .carcols_catalog import list_paint_colors, paint_label
-from .vehicles_catalog import list_vehicles, vehicle_name
+from .vehicles_catalog import list_livery_options, list_vehicles, livery_label, vehicle_name
 from .versioning import check_write, inspect_save, status_chip
 from .weapon_detect import (
     classify_weapon,
@@ -1624,7 +1624,44 @@ class Save4BucksApp:
         install = self.active_install
         if car and car.valid:
             title = vehicle_name(car.model, install)
-            colors = ", ".join(paint_label(c, install) for c in car.colors)
+            main = paint_label(car.colors[0], install).split(" · ", 1)[-1]
+            accent = paint_label(car.colors[1], install).split(" · ", 1)[-1]
+            paint_bits = main if main == accent else f"{main} / {accent}"
+            proof_on = any(
+                (
+                    car.bullet_proof,
+                    car.fire_proof,
+                    car.explosion_proof,
+                    car.collision_proof,
+                    car.melee_proof,
+                )
+            )
+            all_proof = all(
+                (
+                    car.bullet_proof,
+                    car.fire_proof,
+                    car.explosion_proof,
+                    car.collision_proof,
+                    car.melee_proof,
+                )
+            )
+            extra = ""
+            if all_proof:
+                extra = " · Indestructible"
+            elif proof_on:
+                extra = " · " + "+".join(
+                    p
+                    for p, on in (
+                        ("Bullets", car.bullet_proof),
+                        ("Fire", car.fire_proof),
+                        ("Expl", car.explosion_proof),
+                        ("Crashes", car.collision_proof),
+                        ("Melee", car.melee_proof),
+                    )
+                    if on
+                )
+            liv = livery_label(car.livery)
+            liv_bit = "" if (car.livery & 0xFF) == 255 else f" · {liv.split(' · ', 1)[-1]}"
             body = ft.Column(
                 [
                     ft.Row(
@@ -1636,36 +1673,11 @@ class Save4BucksApp:
                                 color=FG,
                             ),
                             ft.Container(expand=True),
-                            ft.Text(f"#{car.model}", size=11, color=MUTED),
                         ],
                         vertical_alignment=ft.CrossAxisAlignment.CENTER,
                     ),
                     ft.Text(
-                        f"Colors {colors} · Livery {car.livery}"
-                        + (
-                            " · "
-                            + "+".join(
-                                p
-                                for p, on in (
-                                    ("Bullet", car.bullet_proof),
-                                    ("Fire", car.fire_proof),
-                                    ("Expl", car.explosion_proof),
-                                    ("Coll", car.collision_proof),
-                                    ("Melee", car.melee_proof),
-                                )
-                                if on
-                            )
-                            if any(
-                                (
-                                    car.bullet_proof,
-                                    car.fire_proof,
-                                    car.explosion_proof,
-                                    car.collision_proof,
-                                    car.melee_proof,
-                                )
-                            )
-                            else ""
-                        ),
+                        f"{paint_bits}{liv_bit}{extra}",
                         size=11,
                         color=MUTED,
                     ),
@@ -1733,13 +1745,12 @@ class Save4BucksApp:
         self._vehicle_picker_car_index = car_index
 
         vehicles = list_vehicles(self.active_install)
-        all_opts = [
-            ft.DropdownOption(key=str(i), text=f"{name}  [{i}]") for i, name in vehicles
-        ]
+        # Friendly names only — index stays in the option key for writes/search.
+        all_opts = [ft.DropdownOption(key=str(i), text=name) for i, name in vehicles]
 
         pref_model: int | None = None
         pref_colors = (0, 0, 0, 0)
-        pref_livery = 0
+        pref_livery = 255
         pref_bullet = pref_fire = pref_explosion = pref_collision = pref_melee = False
         if mode == "edit" and car_index is not None and self.active_slot is not None:
             try:
@@ -1756,6 +1767,10 @@ class Save4BucksApp:
             except Exception:
                 pass
 
+        all_proofs_on = all(
+            (pref_bullet, pref_fire, pref_explosion, pref_collision, pref_melee)
+        )
+
         def _paint_options(*extra: int) -> list[ft.DropdownOption]:
             rows = list(list_paint_colors(self.active_install))
             known = {i for i, _ in rows}
@@ -1763,7 +1778,17 @@ class Save4BucksApp:
                 if e >= 0 and e not in known:
                     rows.append((e, paint_label(e, self.active_install)))
             rows.sort(key=lambda t: t[0])
-            return [ft.DropdownOption(key=str(i), text=lab) for i, lab in rows]
+            # Name-first labels; keep a faint index only when names collide.
+            by_name: dict[str, list[int]] = {}
+            for i, lab in rows:
+                name = lab.split(" · ", 1)[-1]
+                by_name.setdefault(name, []).append(i)
+            opts: list[ft.DropdownOption] = []
+            for i, lab in rows:
+                name = lab.split(" · ", 1)[-1]
+                text = name if len(by_name[name]) == 1 else lab
+                opts.append(ft.DropdownOption(key=str(i), text=text))
+            return opts
 
         def _styled_dd(
             label: str,
@@ -1786,8 +1811,8 @@ class Save4BucksApp:
             )
 
         search = ft.TextField(
-            label="Search",
-            hint_text="Filter by name…",
+            label="Find a car",
+            hint_text="Type a name…",
             value="",
             border_color=GREEN_HI,
             focused_border_color=FOCUS,
@@ -1796,7 +1821,7 @@ class Save4BucksApp:
             expand=True,
         )
         dd = _styled_dd(
-            "Vehicle",
+            "Car",
             all_opts,
             str(pref_model) if pref_model and pref_model > 0 else None,
         )
@@ -1818,23 +1843,23 @@ class Save4BucksApp:
         search.on_change = on_search
 
         paint_opts = _paint_options(*pref_colors)
-        c1 = _styled_dd("Primary", paint_opts, str(pref_colors[0]), expand=True)
-        c2 = _styled_dd("Secondary", list(paint_opts), str(pref_colors[1]), expand=True)
-        c3 = _styled_dd("Pearl", list(paint_opts), str(pref_colors[2]), expand=True)
-        c4 = _styled_dd("Wheel", list(paint_opts), str(pref_colors[3]), expand=True)
+        c1 = _styled_dd("Main colour", paint_opts, str(pref_colors[0]), expand=True)
+        c2 = _styled_dd("Accent", list(paint_opts), str(pref_colors[1]), expand=True)
+        c3 = _styled_dd("Shine", list(paint_opts), str(pref_colors[2]), expand=True)
+        c4 = _styled_dd("Wheels", list(paint_opts), str(pref_colors[3]), expand=True)
         livery_opts = [
-            ft.DropdownOption(key=str(i), text=str(i))
-            for i in sorted({*range(16), max(0, pref_livery)})
+            ft.DropdownOption(key=str(i), text=lab)
+            for i, lab in list_livery_options(pref_livery)
         ]
+        # Friendlier livery labels in the dropdown text already ("255 · None")
         livery_dd = _styled_dd(
-            "Livery",
+            "Decal",
             livery_opts,
-            str(min(pref_livery, 255)),
-            expand=False,
-            width=120,
+            str(pref_livery & 0xFF),
+            expand=True,
         )
 
-        cb_style = ft.TextStyle(color=FG, size=12)
+        cb_style = ft.TextStyle(color=FG, size=13)
 
         def _proof_cb(label: str, value: bool) -> ft.Checkbox:
             return ft.Checkbox(
@@ -1844,11 +1869,88 @@ class Save4BucksApp:
                 label_style=cb_style,
             )
 
-        proof_bullet = _proof_cb("Bullet", pref_bullet)
+        proof_bullet = _proof_cb("Bullets", pref_bullet)
         proof_fire = _proof_cb("Fire", pref_fire)
-        proof_explosion = _proof_cb("Explosion", pref_explosion)
-        proof_collision = _proof_cb("Collision", pref_collision)
+        proof_explosion = _proof_cb("Explosions", pref_explosion)
+        proof_collision = _proof_cb("Crashes", pref_collision)
         proof_melee = _proof_cb("Melee", pref_melee)
+
+        invincible = ft.Checkbox(
+            label="Indestructible",
+            value=all_proofs_on,
+            active_color=GOLD,
+            label_style=ft.TextStyle(color=FG, size=14),
+            tooltip="Survive bullets, fire, explosions, crashes, and melee",
+        )
+
+        def _sync_from_invincible(_e=None) -> None:
+            on = bool(invincible.value)
+            for cb in (
+                proof_bullet,
+                proof_fire,
+                proof_explosion,
+                proof_collision,
+                proof_melee,
+            ):
+                cb.value = on
+            self.page.update()
+
+        def _sync_to_invincible(_e=None) -> None:
+            invincible.value = all(
+                bool(cb.value)
+                for cb in (
+                    proof_bullet,
+                    proof_fire,
+                    proof_explosion,
+                    proof_collision,
+                    proof_melee,
+                )
+            )
+            self.page.update()
+
+        invincible.on_change = _sync_from_invincible
+        for cb in (
+            proof_bullet,
+            proof_fire,
+            proof_explosion,
+            proof_collision,
+            proof_melee,
+        ):
+            cb.on_change = _sync_to_invincible
+
+        more = ft.ExpansionTile(
+            title=ft.Text("More options", size=13, color=MUTED),
+            subtitle=ft.Text("Shine, wheels, decal, damage types", size=11, color=MUTED),
+            affinity=ft.TileAffinity.LEADING,
+            text_color=MUTED,
+            icon_color=MUTED,
+            collapsed_text_color=MUTED,
+            collapsed_icon_color=MUTED,
+            tile_padding=ft.Padding.symmetric(horizontal=0, vertical=0),
+            controls_padding=ft.Padding.only(top=8),
+            controls=[
+                ft.Column(
+                    [
+                        ft.Row([c3, c4], spacing=10),
+                        livery_dd,
+                        ft.Text("Damage immunity", size=12, color=MUTED),
+                        ft.Row(
+                            [
+                                proof_bullet,
+                                proof_fire,
+                                proof_explosion,
+                                proof_collision,
+                                proof_melee,
+                            ],
+                            wrap=True,
+                            spacing=2,
+                        ),
+                    ],
+                    spacing=10,
+                    tight=True,
+                )
+            ],
+        )
 
         def close(_e=None) -> None:
             self.page.pop_dialog()
@@ -1858,10 +1960,10 @@ class Save4BucksApp:
             try:
                 mid = int(raw)
             except ValueError:
-                self._alert(APP_NAME, "Pick a vehicle from the list.", error=True)
+                self._alert(APP_NAME, "Pick a car from the list.", error=True)
                 return
             if mid <= 0:
-                self._alert(APP_NAME, "Pick a vehicle from the list.", error=True)
+                self._alert(APP_NAME, "Pick a car from the list.", error=True)
                 return
 
             def _ci(ctrl: ft.Dropdown, fallback: int = 0) -> int:
@@ -1870,11 +1972,16 @@ class Save4BucksApp:
                 except ValueError:
                     return fallback
 
-            colors = (_ci(c1, pref_colors[0]), _ci(c2, pref_colors[1]), _ci(c3, pref_colors[2]), _ci(c4, pref_colors[3]))
+            colors = (
+                _ci(c1, pref_colors[0]),
+                _ci(c2, pref_colors[1]),
+                _ci(c3, pref_colors[2]),
+                _ci(c4, pref_colors[3]),
+            )
             try:
-                liv = max(0, int((livery_dd.value or "0").strip()))
+                liv = max(0, int((livery_dd.value or "255").strip()))
             except ValueError:
-                liv = 0
+                liv = 255
             flags = proofs_to_flags(
                 bullet=bool(proof_bullet.value),
                 fire=bool(proof_fire.value),
@@ -1893,34 +2000,24 @@ class Save4BucksApp:
                     car_index, mid, colors=colors, livery=liv, flags=flags
                 )
 
+        title = "Change vehicle" if mode == "edit" else "Add a vehicle"
         self.page.show_dialog(
             ft.AlertDialog(
                 modal=True,
-                title=ft.Text("Pick vehicle", color=GOLD),
+                title=ft.Text(title, color=GOLD, size=18, weight=ft.FontWeight.W_600),
                 content=ft.Column(
                     [
                         search,
                         dd,
-                        ft.Text("Customize", size=13, weight=ft.FontWeight.W_600, color=GOLD),
-                        ft.Row([c1, c2], spacing=8),
-                        ft.Row([c3, c4, livery_dd], spacing=8),
-                        ft.Text("Proofs", size=12, color=MUTED),
-                        ft.Row(
-                            [
-                                proof_bullet,
-                                proof_fire,
-                                proof_explosion,
-                                proof_collision,
-                                proof_melee,
-                            ],
-                            wrap=True,
-                            spacing=4,
-                        ),
+                        ft.Container(height=4),
+                        ft.Row([c1, c2], spacing=10),
+                        invincible,
+                        more,
                     ],
                     tight=True,
-                    spacing=10,
-                    width=440,
-                    height=360,
+                    spacing=12,
+                    width=400,
+                    height=320,
                     scroll=ft.ScrollMode.AUTO,
                 ),
                 actions=[
@@ -1928,7 +2025,7 @@ class Save4BucksApp:
                         "Cancel", on_click=close, style=ft.ButtonStyle(color=MUTED)
                     ),
                     ft.FilledButton(
-                        "OK",
+                        "Save" if mode == "edit" else "Add",
                         bgcolor=GREEN_HI,
                         color=BTN_ON_GREEN,
                         on_click=apply,
