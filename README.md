@@ -12,7 +12,9 @@
 
 <table>
 <tr>
-<td><b>🧩&nbsp;Core</b></td>
+<td valign="middle" width="140">
+<img src="docs/icons/core.svg" width="28" height="28" alt="" aria-hidden="true">&nbsp;<b>Core</b>
+</td>
 <td>
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
@@ -22,7 +24,9 @@
 </td>
 </tr>
 <tr>
-<td><b>📦&nbsp;Packaging</b></td>
+<td valign="middle" width="140">
+<img src="docs/icons/package.svg" width="28" height="28" alt="" aria-hidden="true">&nbsp;<b>Packaging</b>
+</td>
 <td>
 
 [![PyInstaller](https://img.shields.io/badge/Pack-flet%20pack%20%2B%20PyInstaller-000000?style=flat-square)](https://flet.dev/docs/publish/using-pyinstaller)
@@ -33,7 +37,9 @@
 </td>
 </tr>
 <tr>
-<td><b>🛠️&nbsp;Tooling&nbsp;&&nbsp;CI</b></td>
+<td valign="middle" width="140">
+<img src="docs/icons/tools.svg" width="28" height="28" alt="" aria-hidden="true">&nbsp;<b>Tooling&nbsp;&amp;&nbsp;CI</b>
+</td>
 <td>
 
 [![pytest](https://img.shields.io/badge/pytest-9.0.3-0A9EDC?style=flat-square&logo=pytest&logoColor=white)](https://pytest.org/)
