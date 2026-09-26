@@ -98,3 +98,29 @@ def list_vehicles(install: Path | None = None) -> list[tuple[int, str]]:
 
 def clear_vehicle_cache() -> None:
     load_vehicle_index_map.cache_clear()
+
+
+def livery_label(index: int) -> str:
+    """
+    Display label for a StoredCar livery byte.
+
+    GTA IV has no global livery name table in common/data (unlike carcols.dat).
+    Indices map to per-model texture slots; 255 is the usual unused/None marker
+    (``0xFFFFFFFF & 0xFF``).
+    """
+    i = int(index) & 0xFF
+    if i == 255:
+        return "None"
+    return f"Style {i}"
+
+
+def list_livery_options(*extra: int) -> list[tuple[int, str]]:
+    """Dropdown rows: None (255) plus Style 0–15 and any current value."""
+    vals = {255, *range(16)}
+    for e in extra:
+        if e >= 0:
+            vals.add(int(e) & 0xFF)
+    items = [(i, livery_label(i)) for i in vals]
+    # None first, then ascending indices
+    items.sort(key=lambda t: (-1 if t[0] == 255 else t[0]))
+    return items
