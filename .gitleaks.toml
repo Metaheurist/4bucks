@@ -1,0 +1,20 @@
+# Gitleaks configuration for CI (see .github/workflows/ci.yml).
+# Working-tree scan with --no-git so old commits are not re-flagged.
+
+title = "Save 4Bucks"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Local venvs, build outputs, caches, and dependency trees"
+paths = [
+  '''^\.venv/''',
+  '''^venv/''',
+  '''^ENV/''',
+  '''^dist/''',
+  '''^build/''',
+  '''^backups/''',
+  '''^\.pytest_cache/''',
+  '''^__pycache__/''',
+]

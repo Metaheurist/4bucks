@@ -1,0 +1,228 @@
+# Save 4Bucks — CI/CD
+# PR / push: unit tests + secret scan + pip-audit
+# Push to main: SemVer patch bump → Windows EXE (x64 + x86) → GitHub Release
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  unit-tests:
+    name: "1 · Unit tests"
+    if: |
+      github.event_name != 'push' ||
+      !contains(github.event.head_commit.message, '[skip ci]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Run unit tests
+        run: python -m pytest tests/unit -q
+
+  security-audit:
+    name: "1 · Secret scan & dependency check"
+    if: |
+      github.event_name != 'push' ||
+      !contains(github.event.head_commit.message, '[skip ci]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Restore Gitleaks binary
+        id: gitleaks-cache
+        uses: actions/cache@v5
+        with:
+          path: gitleaks
+          key: gitleaks-8.28.0-${{ runner.os }}-x64
+
+      - name: Download Gitleaks
+        if: steps.gitleaks-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          VERSION=8.28.0
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz" | tar -xz
+          chmod +x gitleaks
+
+      - name: Gitleaks (secret scan)
+        run: ./gitleaks detect --source . --config .gitleaks.toml --no-git --verbose --exit-code 1 --redact
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install pip-audit
+        run: |
+          python -m pip install --upgrade pip
+          pip install "pip-audit==2.9.0"
+
+      - name: pip-audit (runtime)
+        run: python -m pip_audit -r requirements.txt
+
+      - name: pip-audit (dev)
+        run: python -m pip_audit -r requirements-dev.txt
+
+  build-exe:
+    name: "2 · Build Windows EXE (${{ matrix.arch }})"
+    needs: [unit-tests, security-audit]
+    if: github.event_name == 'pull_request'
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, x86]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        id: py
+        with:
+          python-version: "3.11"
+          architecture: ${{ matrix.arch }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Build EXE (${{ matrix.arch }})
+        shell: pwsh
+        run: |
+          $py = "${{ steps.py.outputs.python-path }}"
+          if ("${{ matrix.arch }}" -eq "x64") {
+            powershell -ExecutionPolicy Bypass -File .\build.ps1 -SkipChecks -Arch x64 -PythonX64 $py
+          } else {
+            powershell -ExecutionPolicy Bypass -File .\build.ps1 -SkipChecks -Arch x86 -PythonX86 $py
+          }
+
+      - name: Upload EXE artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Save4Bucks-${{ matrix.arch }}-pr
+          path: dist/Save4Bucks-${{ matrix.arch }}.exe
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: "3 · Version bump & GitHub Release"
+    needs: [unit-tests, security-audit]
+    if: |
+      github.ref == 'refs/heads/main' &&
+      (
+        github.event_name == 'workflow_dispatch' ||
+        (
+          github.event_name == 'push' &&
+          !contains(github.event.head_commit.message, '[skip ci]')
+        )
+      )
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: ci-release-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v6
+        id: py64
+        with:
+          python-version: "3.11"
+          architecture: x64
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - uses: actions/setup-python@v6
+        id: py86
+        with:
+          python-version: "3.11"
+          architecture: x86
+
+      - name: Bump patch version
+        id: bump
+        shell: bash
+        run: |
+          set -euo pipefail
+          PY="${{ steps.py64.outputs.python-path }}"
+          "$PY" scripts/ci/bump_version.py --write-github-output
+
+      - name: Build EXE x64
+        shell: pwsh
+        run: |
+          powershell -ExecutionPolicy Bypass -File .\build.ps1 -SkipChecks -Arch x64 -PythonX64 "${{ steps.py64.outputs.python-path }}"
+
+      - name: Build EXE x86
+        shell: pwsh
+        run: |
+          powershell -ExecutionPolicy Bypass -File .\build.ps1 -SkipChecks -Arch x86 -PythonX86 "${{ steps.py86.outputs.python-path }}"
+
+      - name: Commit version bump
+        shell: bash
+        env:
+          VERSION: ${{ steps.bump.outputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/__init__.py
+          git commit -m "chore(release): bump version to ${VERSION} [skip ci]"
+          git push origin "HEAD:${{ github.ref_name }}"
+
+      - name: Create tag and GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.bump.outputs.version }}
+        run: |
+          set -euo pipefail
+          TAG="v${VERSION}"
+          git tag -a "${TAG}" -m "Save 4Bucks ${VERSION}"
+          git push origin "${TAG}"
+
+          NOTES="$(printf '%s\n' \
+            "## Save 4Bucks ${VERSION}" \
+            "" \
+            "Automated release from CI." \
+            "" \
+            "### Artifacts" \
+            "- \`Save4Bucks-x64.exe\` — 64-bit Windows (PyInstaller)" \
+            "- \`Save4Bucks-x86.exe\` — 32-bit Windows (PyInstaller)" \
+            "" \
+            "Close GTAIV.exe before editing saves. Supported CE save version: **57**.")"
+
+          gh release create "${TAG}" \
+            --title "Save 4Bucks ${VERSION}" \
+            --notes "${NOTES}" \
+            "dist/Save4Bucks-x64.exe#Save4Bucks-x64.exe" \
+            "dist/Save4Bucks-x86.exe#Save4Bucks-x86.exe"
