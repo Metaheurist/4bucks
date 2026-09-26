@@ -24,6 +24,7 @@ flet pack save4bucks.py -n Save4Bucks-x64 -i assets\icon.ico --distpath dist -y 
   --hidden-import src.save_money --hidden-import src.save_weapons `
   --hidden-import src.save_vitality --hidden-import src.save_garage `
   --hidden-import src.safehouse_parking --hidden-import src.vehicles_catalog `
+  --hidden-import src.carcols_catalog `
   --hidden-import src.playerinfo `
   --hidden-import src.weapons_catalog --hidden-import src.weapon_detect `
   --hidden-import src.versioning --hidden-import src.backup --hidden-import src.settings

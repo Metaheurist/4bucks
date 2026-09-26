@@ -51,7 +51,7 @@ Keyboard: Tab moves focus; Enter activates; Esc returns to menu.
 
 ### Garage
 
-Pick a safehouse (Broker, South Bohan, Middle Park East, Playboy X, Alderney). Occupied spots: change vehicle model or clear. Empty spots: **Spawn** into a free curated parking pose. Vehicle names come from the selected install's `vehicles.ide` merge order.
+Pick a safehouse (Broker, South Bohan, Middle Park East, Playboy X, Alderney). Occupied spots: change vehicle model or clear. Empty spots: **Spawn** into a free curated parking pose. Vehicle names come from the selected install's `vehicles.ide` merge order. Paint dropdowns use named swatches from merged `carcols.dat` `col` tables (including TBoGT extras).
 
 ### Edit flow
 

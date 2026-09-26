@@ -13,6 +13,7 @@ UI (app.py - Flet multi-view)
   → save_garage.py       Block 4 StoredCar (safehouse parking)
   → safehouse_parking.py curated IV parking poses
   → vehicles_catalog.py  vehicles.ide index → name
+  → carcols_catalog.py   carcols.dat col table → paint swatch names
   → weapons_catalog.py   stock / episodic IDs
   → weapon_detect.py     Stock vs Mod (+ optional weaponinfo.xml)
   → backup.py            dual Autobackup

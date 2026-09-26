@@ -37,5 +37,5 @@ Dual-arch EXE: [docs/setup-and-usage.md](docs/setup-and-usage.md), `build.ps1`.
 | Flet UI | `src/app.py` |
 | Write gate / technique | `src/versioning.py` |
 | Money / weapons / vitality | `src/save_*.py`, `src/playerinfo.py` |
-| Garages / vehicles | `src/save_garage.py`, `src/safehouse_parking.py`, `src/vehicles_catalog.py` |
+| Garages / vehicles | `src/save_garage.py`, `src/safehouse_parking.py`, `src/vehicles_catalog.py, src/carcols_catalog.py` |
 | CI | `.github/workflows/ci.yml`, `scripts/ci/` |
