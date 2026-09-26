@@ -1,12 +1,12 @@
-# Save 4Bucks - GTA IV CE save money editor
+# Save 4Bucks
 
-**Save 4Bucks** is a Windows desktop tool that edits **cash** in Grand Theft Auto IV **Complete Edition** save files (`SGTA4xx`). It is an **offline save editor only** - no process memory, no injection, no live godmode/weapons.
+Offline Windows editor for Grand Theft Auto IV **Complete Edition** `SGTA4xx` saves. Edits PlayerInfo fields only: cash, weapons/ammo, health, armour, and maxima. No process memory, injection, or live trainers.
 
-**Latest changes:** **[CHANGELOG.md](CHANGELOG.md)** (current **v1.2.0** - Flet 1.0 UI, `flet pack` dual-arch EXEs, GTA IV-style docs/tech-stack icons, CI hardening).
+**Changelog:** [CHANGELOG.md](CHANGELOG.md) · **Releases:** [GitHub Releases](https://github.com/Metaheurist/4bucks/releases)
 
-### Here's what I plan next
+### Roadmap
 
-**[docs/next-phase-development-plan.md](docs/next-phase-development-plan.md)** - optional UX polish, broader CE verification notes, and packaging improvements. Shipped work is in the **[changelog](docs/CHANGELOG.md)** and **[app overview](docs/app-and-features.md)**.
+[docs/next-phase-development-plan.md](docs/next-phase-development-plan.md)
 
 ### Tech stack
 
@@ -29,8 +29,7 @@
 </td>
 <td>
 
-[![PyInstaller](https://img.shields.io/badge/Pack-flet%20pack%20%2B%20PyInstaller-000000?style=flat-square)](https://flet.dev/docs/publish/using-pyinstaller)
-[![Pillow](https://img.shields.io/badge/Pillow-12.3.0-8B5CF6?style=flat-square)](https://python-pillow.org/)
+[![Flet pack](https://img.shields.io/badge/flet%20pack-PyInstaller-000000?style=flat-square)](https://flet.dev/)
 [![x64](https://img.shields.io/badge/EXE-x64-2e7d32?style=flat-square)](docs/build-test-and-ci.md)
 [![x86](https://img.shields.io/badge/EXE-x86-2e7d32?style=flat-square)](docs/build-test-and-ci.md)
 
@@ -38,7 +37,7 @@
 </tr>
 <tr>
 <td valign="middle" width="140">
-<img src="docs/icons/tools.svg" width="28" height="28" alt="" aria-hidden="true">&nbsp;<b>Tooling&nbsp;&amp;&nbsp;CI</b>
+<img src="docs/icons/tools.svg" width="28" height="28" alt="" aria-hidden="true">&nbsp;<b>Tooling &amp; CI</b>
 </td>
 <td>
 
@@ -51,7 +50,7 @@
 </tr>
 </table>
 
-**Repository**: [github.com/Metaheurist/4bucks](https://github.com/Metaheurist/4bucks)
+**Repository:** [github.com/Metaheurist/4bucks](https://github.com/Metaheurist/4bucks)
 
 <!-- SAVE4BUCKS_BUILD_INFO_START -->
 
@@ -72,35 +71,34 @@ Latest: [Releases](https://github.com/Metaheurist/4bucks/releases) · [Actions](
 
 ### Documentation
 
-Long-form sections live under **`docs/`** so the main README stays short. Open them from the repo’s file tree or use the links below. Icons under [`docs/icons/`](docs/icons/) use a **GTA IV phone-menu** style (dark tile + Liberty City gold) for both the documentation hub and the tech-stack category labels.
-
 | | |
 | :--- | :--- |
-| <img src="docs/icons/lock.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Security](docs/SECURITY.md)** - offline threat model, CVE gates, what I do not do |
-| <img src="docs/icons/home.svg" width="32" height="32" alt="" aria-hidden="true"> | **[App overview & features](docs/app-and-features.md)** - UI flow, autobackup, save slots, CLI |
-| <img src="docs/icons/settings.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Installation & usage](docs/setup-and-usage.md)** - venv, run from source, dual-arch EXE build |
-| <img src="docs/icons/flask.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Testing & configuration](docs/testing-and-configuration.md)** - pytest, pip-audit, manual checklist |
-| <img src="docs/icons/timer.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Build, test & CI](docs/build-test-and-ci.md)** - `build.ps1`, Actions, SemVer releases |
+| <img src="docs/icons/lock.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Security](docs/SECURITY.md)** - threat model, CVE gates, out of scope |
+| <img src="docs/icons/home.svg" width="32" height="32" alt="" aria-hidden="true"> | **[App overview & features](docs/app-and-features.md)** - views, autobackup, CLI |
+| <img src="docs/icons/settings.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Installation & usage](docs/setup-and-usage.md)** - source run, dual-arch build |
+| <img src="docs/icons/flask.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Testing & configuration](docs/testing-and-configuration.md)** - pytest, pip-audit |
+| <img src="docs/icons/timer.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Build, test & CI](docs/build-test-and-ci.md)** - `build.ps1`, Actions, SemVer |
 | <img src="docs/icons/folder.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Architecture](docs/architecture.md)** - module map and write path |
-| <img src="docs/icons/clipboard.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Save format](docs/save-format.md)** - BLOCK / money offsets |
-| <img src="docs/icons/shield.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Savegame versioning](docs/versioning.md)** - allowlist / refuse rules (CE v57) |
-| <img src="docs/icons/paperclip.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Known issues](docs/known-issues.md)** - OneDrive, autosave episodes, Steam pitfalls |
-| <img src="docs/icons/brain.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Research notes](docs/research.md)** - GTAMods / GTASnP / forum sources |
-| <img src="docs/icons/folder.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Project reference](docs/project-reference.md)** - tree, deps, troubleshooting |
-| <img src="docs/icons/scroll.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Changelog](docs/CHANGELOG.md)** - version history and release notes |
-| <img src="docs/icons/rocket.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Next phase plan](docs/next-phase-development-plan.md)** - upcoming improvements |
+| <img src="docs/icons/clipboard.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Save format](docs/save-format.md)** - PlayerInfo offsets |
+| <img src="docs/icons/shield.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Savegame versioning](docs/versioning.md)** - allowlist and write techniques |
+| <img src="docs/icons/paperclip.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Known issues](docs/known-issues.md)** - OneDrive, autosave, peers |
+| <img src="docs/icons/brain.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Research notes](docs/research.md)** - public sources and local dumps |
+| <img src="docs/icons/folder.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Project reference](docs/project-reference.md)** - tree and dependencies |
+| <img src="docs/icons/scroll.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Changelog](docs/CHANGELOG.md)** |
+| <img src="docs/icons/rocket.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Roadmap](docs/next-phase-development-plan.md)** |
 | <img src="docs/icons/user.svg" width="32" height="32" alt="" aria-hidden="true"> | **[About & support](docs/about-and-support.md)** |
+| <img src="docs/icons/paperclip.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Contributing](CONTRIBUTING.md)** |
 
-Supported saves: CE with `SAVEGAME_VERSION_NUMBER` **57** (e.g. `1.2.0.59`). Close **GTAIV.exe** before writing.
+Supported saves: `SAVEGAME_VERSION_NUMBER` **57** (CE 1.2.0.32 / 1.2.0.43+ / 1.2.0.59 and matching pre-CE samples; see [versioning](docs/versioning.md)). Close **GTAIV.exe** before writing.
 
 ---
 
 ## App icons
 
-Master rasters live under **`assets/`** (`icon.png`, **`icon.ico`**). The frozen EXE and window title use `icon.ico` (generated from PNG by `build.ps1` if missing).
+Rasters under **`assets/`** (`icon.png`, `icon.ico`). The EXE and window use `icon.ico` (generated from PNG by `build.ps1` if missing).
 
 ---
 
 ## Security
 
-The authoritative guide is **[docs/SECURITY.md](docs/SECURITY.md)** (offline threat model, dependency audits, privileges). Root [`SECURITY.md`](SECURITY.md) is a short pointer for GitHub’s security tab convention.
+Authoritative guide: **[docs/SECURITY.md](docs/SECURITY.md)**. Root [`SECURITY.md`](SECURITY.md) points GitHub's security tab at that file.

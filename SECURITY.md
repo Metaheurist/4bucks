@@ -1,3 +1,3 @@
 # Security
 
-The authoritative security guide is **[docs/SECURITY.md](docs/SECURITY.md)**.
+Authoritative guide: **[docs/SECURITY.md](docs/SECURITY.md)**.

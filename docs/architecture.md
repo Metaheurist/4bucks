@@ -1,44 +1,49 @@
 # Architecture
 
-<a id="nav-architecture"></a>
-
 ## Module map
 
 ```text
-UI (app.py - Flet / Flutter)
-  → detect.py          find Profiles / list SGTA4 slots / game running?
-  → versioning.py      SAVE magic, version allowlist, PlayerInfo gate
-  → save_money.py      parse BLOCK / read+write money
-  → backup.py          dual Autobackup
-  → settings.py        persist Autobackup / also-autosave toggles
+UI (app.py - Flet multi-view)
+  → detect.py            Profiles / slots / game running
+  → versioning.py        WriteTechnique / SaveWriteProfile / gates
+  → playerinfo.py        BLOCK parse + PlayerInfo locator
+  → save_money.py        money + display money
+  → save_weapons.py      weapon IDs + ammo
+  → save_vitality.py     health / armour floats + max uint16s
+  → weapons_catalog.py   stock / episodic IDs
+  → weapon_detect.py     Stock vs Mod (+ optional weaponinfo.xml)
+  → backup.py            dual Autobackup
+  → settings.py          Autobackup / also-autosave
 ```
 
 ```mermaid
 flowchart LR
-  select[Select profile + slot]
-  chip[Status chip inspect_save]
+  menu[Startup menu]
+  select[Profile + slot]
+  chip[Status chip + technique]
   gate[Refuse if game or version fail]
   bak[Dual Autobackup fail-closed]
-  patch[Patch money + display money]
-  select --> chip --> gate --> bak --> patch
+  patch[PlayerInfo in-place patch]
+  menu --> select --> chip --> gate --> bak --> patch
 ```
 
 ## Data flow
 
-1. User selects profile + slot.
-2. Status chip from `inspect_save` / `check_write`.
-3. On Set/Add: refuse if game running or version gate fails.
-4. Optional confirm for non-CE path warnings.
-5. If Autobackup: copy to `{save}.backup` and `app/backups/...` (fail closed).
-6. Patch money + display money uint32 LE; re-read verify.
+1. Startup menu → Money / Weapons / Vitality / Settings.
+2. User selects profile and slot.
+3. Status chip from `inspect_save` / `check_write` / `resolve_write_profile`.
+4. On apply: refuse if the game is running or the write technique is unsupported.
+5. Optional confirm for non-CE path warnings.
+6. If Autobackup: copy beside the save and under `app/backups/` (fail closed).
+7. Patch PlayerInfo fields; re-read to verify.
 
 ## App directory
 
-- Frozen EXE: folder containing `Save4Bucks-x64.exe` / `Save4Bucks-x86.exe` (from `flet pack`)
-- Source: repo root (`4bucks/`)
+- Frozen EXE: folder containing `Save4Bucks-x64.exe` / `Save4Bucks-x86.exe`
+- Source: repository root
 
 Used for `backups/` and `save4bucks_settings.json`.
 
 ## UI stack
 
-The window is a **Flet** app (`ft.run` in `src/app.py`) with a dark Liberty City palette. Core save logic stays in pure Python modules so CLI and tests do not need Flet.
+Flet app (`ft.run` in `src/app.py`): outlined Liberty City panels, `AnimatedSwitcher` transitions, theme focus colour, focusable menu buttons, Esc and digit shortcuts, selectable status text. Save logic remains in pure Python modules so CLI and tests do not require Flet.

@@ -1,37 +1,36 @@
-<a id="nav-testing"></a>
+# Testing and configuration
 
-## 🧪 Testing & configuration
-
-### Unit tests
+## Unit tests
 
 ```powershell
-cd "C:\Users\OnceU\OneDrive\Documents\GitHub\4bucks"
+cd path\to\4bucks
 .\.venv\Scripts\python.exe -m pytest tests/unit -q
 ```
 
-Covers:
+Coverage:
 
-- parse / read / set / add money on synthetic CE fixtures
-- version gate (bad version, magic, PlayerInfo)
-- dual Autobackup paths + fail-closed abort
-- slot listing skips `*.backup`
+- Parse / read / set / add money on synthetic CE fixtures
+- Weapons loadout and ammo round-trip; stock vs mod classification
+- Health / armour / max health / max armour round-trip
+- Write profile (`PLAYERINFO_INPLACE_V57`) and version gate refusals
+- Dual Autobackup paths and fail-closed abort
+- Slot listing skips `*.backup`
 
-### Manual checklist
+Unit tests do not drive the Flet UI; they cover save, backup, and version logic only.
+
+## Manual checklist
 
 1. Quit GTA IV.
-2. From source: `python -m src` (Flet window) **or** launch `dist\Save4Bucks-x64.exe`.
-3. Note HUD money on a manual slot.
-4. Set money in Save 4Bucks; confirm chip `v57 · OK to edit`.
-5. Confirm `SGTA4xx.backup` beside save and a file under `backups\`.
-6. Load slot in-game; verify cash.
+2. Note HUD money (and optionally health/weapons) on a manual slot.
+3. Edit in Save 4Bucks; confirm chip `v57 · CE · … · PlayerInfo in-place · OK`.
+4. Confirm `SGTA4xx.backup` beside the save and a file under `backups\`.
+5. Load the slot in-game and verify values.
 
-Unit tests do **not** drive the Flet UI - they cover save/backup/version logic only.
-
-### pip-audit
+## pip-audit
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip_audit -r requirements.txt
 .\.venv\Scripts\python.exe -m pip_audit -r requirements-dev.txt
 ```
 
-`build.ps1` runs pytest + pip-audit before packing. CI also runs Gitleaks - see **[build-test-and-ci.md](build-test-and-ci.md)**.
+`build.ps1` runs pytest and pip-audit before packing. CI also runs Gitleaks - see [build-test-and-ci.md](build-test-and-ci.md).

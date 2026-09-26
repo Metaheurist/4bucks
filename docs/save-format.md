@@ -1,4 +1,4 @@
-# Save format (money)
+# Save format (PlayerInfo)
 
 Based on [GTAMods Wiki - Saves (GTA 4)](https://gtamods.com/wiki/Saves_(GTA_4)) and local CE verification.
 
@@ -6,7 +6,7 @@ Based on [GTAMods Wiki - Saves (GTA 4)](https://gtamods.com/wiki/Saves_(GTA_4)) 
 
 | Offset | Type | Field |
 |--------|------|-------|
-| 0x00 | uint32 | savegame version (`SAVEGAME_VERSION_NUMBER`, CE 1.2.0.59 → **57**) |
+| 0x00 | uint32 | savegame version (`SAVEGAME_VERSION_NUMBER`; observed **57** for CE 1.2.0.32 / 1.2.0.43+ / 1.2.0.59 and pre-CE GTASnP samples) |
 | 0x04 | uint32 | size field |
 | 0x0C | char[4] | `SAVE` |
 | 0x10 | wchar_t[128] | last mission title |
@@ -21,15 +21,27 @@ After the five-byte `BLOCK` string:
 |----------|---------|
 | +0x10 | constant **192** (PlayerInfo size) |
 | +0x14 | PlayerInfo start |
-| +0x14+0x08 | **money** uint32 LE |
-| +0x14+0x10 | **display money** uint32 LE |
 
-Save 4Bucks writes **only** those two fields and keeps them equal.
+Offsets below are relative to **PlayerInfo start** (`BLOCK` + `0x14`):
+
+| Offset | Type | Field |
+|--------|------|-------|
+| +0x08 | uint32 LE | money |
+| +0x10 | uint32 LE | display money |
+| +0x24 | uint16 LE | max health |
+| +0x26 | uint16 LE | max armour |
+| +0x50 | float LE | health |
+| +0x54 | float LE | armour |
+| +0x58 | uint32 | current weapon slot |
+| +0x5c | uint32[10] | weapon IDs |
+| +0x84 | uint16[10] | weapons ammo |
+
+Save 4Bucks patches these fields in place (money and display money kept equal). Locator: `src/playerinfo.py`.
 
 ## Checksum
 
-Wiki: trailing checksum is **ignored** by the PC game for load. I do not rewrite it.
+Per the wiki, the trailing checksum is ignored by the PC game on load. The editor does not rewrite it.
 
-## What I never change
+## Unchanged regions
 
-File length, block sizes, Scripts, Stats, Radar, End block.
+File length, block sizes, Scripts, Stats, Radar, and End block are never modified.
