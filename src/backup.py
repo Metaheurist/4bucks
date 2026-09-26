@@ -1,4 +1,4 @@
-"""Dual-location Autobackup for Save 4Bucks."""
+"""Dual-location Autobackup for 4Bucks."""
 
 from __future__ import annotations
 

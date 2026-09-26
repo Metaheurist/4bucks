@@ -1,4 +1,4 @@
-"""PyInstaller / direct launcher for Save 4Bucks."""
+"""PyInstaller / direct launcher for 4Bucks."""
 
 from src.app import run
 

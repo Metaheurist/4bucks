@@ -1,6 +1,6 @@
 # Build, test, and CI
 
-Local packaging and GitHub Actions for Save 4Bucks.
+Local packaging and GitHub Actions for 4Bucks.
 
 ## Local build (`build.ps1`)
 

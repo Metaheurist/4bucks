@@ -1,4 +1,4 @@
-# Save 4Bucks - CI/CD
+# 4Bucks - CI/CD
 # PR / push: unit tests + secret scan + pip-audit + EXE matrix (once)
 # Push to main: prepare SemVer bump → matrix pack with bumped version → release downloads artifacts only
 name: CI
@@ -284,7 +284,7 @@ jobs:
           if git ls-remote --tags origin "refs/tags/${TAG}" | grep -q "${TAG}"; then
             echo "Tag ${TAG} already exists on remote - skipping tag create"
           else
-            git tag -a "${TAG}" -m "Save 4Bucks ${VERSION}"
+            git tag -a "${TAG}" -m "4Bucks ${VERSION}"
             git push origin "${TAG}"
           fi
 
@@ -296,7 +296,7 @@ jobs:
               --clobber
           else
             NOTES="$(printf '%s\n' \
-              "## Save 4Bucks ${VERSION}" \
+              "## 4Bucks ${VERSION}" \
               "" \
               "Automated release from CI." \
               "" \
@@ -307,7 +307,7 @@ jobs:
               "Close GTAIV.exe before editing saves. Supported CE save version: **57**.")"
 
             gh release create "${TAG}" \
-              --title "Save 4Bucks ${VERSION}" \
+              --title "4Bucks ${VERSION}" \
               --notes "${NOTES}" \
               "release-assets/Save4Bucks-x64.exe#Save4Bucks-x64.exe" \
               "release-assets/Save4Bucks-x86.exe#Save4Bucks-x86.exe"

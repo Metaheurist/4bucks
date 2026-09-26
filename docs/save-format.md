@@ -36,7 +36,7 @@ Offsets below are relative to **PlayerInfo start** (`BLOCK` + `0x14`):
 | +0x5c | uint32[10] | weapon IDs |
 | +0x84 | uint16[10] | weapons ammo |
 
-Save 4Bucks patches these fields in place (money and display money kept equal). Locator: `src/playerinfo.py`.
+4Bucks patches these fields in place (money and display money kept equal). Locator: `src/playerinfo.py`.
 
 ## Checksum
 

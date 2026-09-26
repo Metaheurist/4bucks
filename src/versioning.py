@@ -45,7 +45,7 @@ class GameFamily(str, Enum):
     Structural family from End-block shape (not from the version dword).
 
     GTASnP splits CE into 1.2.0.32 vs 1.2.0.43+ using deeper format cues;
-    Save 4Bucks only needs PRE_CE vs CE for PlayerInfo write safety (Parik:
+    4Bucks only needs PRE_CE vs CE for PlayerInfo write safety (Parik:
     PlayerInfo layout is shared; End trim and Radar wchar differ).
     """
 

@@ -19,7 +19,7 @@ Public docs ([GTAMods](https://gtamods.com/wiki/Saves_(GTA_4))) say the dword co
 - GTASnP samples labeled `1.2.0.43 CE and newer`, `1.2.0.32 CE`, and `1.0.8.0 IV / 1.1.3.0 EFLC and older` all carried dword **57**
 - No other dword values appeared in sampled `SGTA4xx` files
 
-GTASnP still splits EXE families by End/Radar structure, not by this dword. Save 4Bucks therefore allowlists **57** and classifies family separately.
+GTASnP still splits EXE families by End/Radar structure, not by this dword. 4Bucks therefore allowlists **57** and classifies family separately.
 
 ## Game family (End block)
 

@@ -83,7 +83,7 @@ def add_money(
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Save 4Bucks CLI")
+    ap = argparse.ArgumentParser(description="4Bucks CLI")
     ap.add_argument("save", type=Path)
     ap.add_argument("--amount", type=int, default=500_000)
     ap.add_argument("--read-only", action="store_true")

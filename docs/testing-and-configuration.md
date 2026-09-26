@@ -22,7 +22,7 @@ Unit tests do not drive the Flet UI; they cover save, backup, and version logic 
 
 1. Quit GTA IV.
 2. Note HUD money (and optionally health/weapons) on a manual slot.
-3. Edit in Save 4Bucks; confirm chip `v57 · CE · … · PlayerInfo in-place · OK`.
+3. Edit in 4Bucks; confirm chip `v57 · CE · … · PlayerInfo in-place · OK`.
 4. Confirm `SGTA4xx.backup` beside the save and a file under `backups\`.
 5. Load the slot in-game and verify values.
 

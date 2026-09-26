@@ -1,4 +1,4 @@
-# Save 4Bucks
+# 4Bucks
 
 Offline Windows editor for Grand Theft Auto IV **Complete Edition** `SGTA4xx` saves. Edits PlayerInfo fields only: cash, weapons/ammo, health, armour, and maxima. No process memory, injection, or live trainers.
 
@@ -95,7 +95,7 @@ Supported saves: `SAVEGAME_VERSION_NUMBER` **57** (CE 1.2.0.32 / 1.2.0.43+ / 1.2
 
 ## App icons
 
-Rasters under **`assets/`** (`icon.png`, `icon.ico`). The EXE and window use `icon.ico` (generated from PNG by `build.ps1` if missing).
+Rasters under **`assets/`** (`icon.png`, `icon.ico`). Menu tile SVGs under **`assets/menu/`** (money, weapons, vitality, settings). The EXE and window use `icon.ico` (generated from PNG by `build.ps1` if missing); menu SVGs are packed via `--add-data`.
 
 ---
 

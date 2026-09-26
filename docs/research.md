@@ -35,7 +35,7 @@ Family split uses End-block shape (GFWL trail vs trimmed CE `END`), matching Par
 
 ## Write adaptation
 
-Parik: CE vs older - PlayerInfo unchanged; End-block signature trimmed; Radar Blip sprite field `char`→`wchar_t`. Save 4Bucks uses `PLAYERINFO_INPLACE_V57` for allowlisted dword **57** across detected CE and pre-CE families (money, weapons, vitality) and refuses unsupported dwords.
+Parik: CE vs older - PlayerInfo unchanged; End-block signature trimmed; Radar Blip sprite field `char`→`wchar_t`. 4Bucks uses `PLAYERINFO_INPLACE_V57` for allowlisted dword **57** across detected CE and pre-CE families (money, weapons, vitality) and refuses unsupported dwords.
 
 GTASnP: cross-version load asymmetry (1.0.8 / 1.2.0.32 / 1.2.0.43+). Edits do not downgrade or convert save format.
 

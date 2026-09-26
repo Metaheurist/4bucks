@@ -1,4 +1,4 @@
-"""Shared fixtures for Save 4Bucks unit tests."""
+"""Shared fixtures for 4Bucks unit tests."""
 
 from __future__ import annotations
 

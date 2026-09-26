@@ -4,7 +4,7 @@ Authoritative security guide for this repository.
 
 ## Threat model
 
-Save 4Bucks is an offline, local Windows tool. It reads and writes the user's own `SGTA4xx` save files. It does not open network sockets for gameplay, inject into `GTAIV.exe`, or ship remote update channels.
+4Bucks is an offline, local Windows tool. It reads and writes the user's own `SGTA4xx` save files. It does not open network sockets for gameplay, inject into `GTAIV.exe`, or ship remote update channels.
 
 ## Dependencies / CVE
 
