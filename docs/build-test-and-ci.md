@@ -36,7 +36,7 @@ Workflow: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml).
 | **Push** → `main` | Unit tests, Gitleaks + `pip-audit`, SemVer **patch** bump, both EXEs, tag `vX.Y.Z`, GitHub Release with both artifacts |
 | **workflow_dispatch** on `main` | Same as push release path |
 
-Bot version commits use `[skip ci]` so they do not re-trigger another release.
+Bot version commits use `[skip ci]` so they do not re-trigger another release. The release job rebases/retries the version-bump push if `main` moved during the dual-arch build.
 
 ### Version source
 

@@ -151,6 +151,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          ref: ${{ github.ref_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-python@v6
@@ -191,13 +192,32 @@ jobs:
         shell: bash
         env:
           VERSION: ${{ steps.bump.outputs.version }}
+          REF: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/__init__.py
           git commit -m "chore(release): bump version to ${VERSION} [skip ci]"
-          git push origin "HEAD:${{ github.ref_name }}"
+
+          # Main may have moved during the dual-arch build — rebase and retry push.
+          for attempt in 1 2 3 4 5 6; do
+            if git push origin "HEAD:${REF}"; then
+              echo "Pushed version bump on attempt ${attempt}"
+              exit 0
+            fi
+            echo "Push rejected (attempt ${attempt}); fetching and rebasing onto origin/${REF}..."
+            git fetch origin "${REF}"
+            if ! git rebase "origin/${REF}"; then
+              echo "Rebase conflict — keeping bumped src/__init__.py"
+              git checkout --ours -- src/__init__.py || true
+              git add src/__init__.py
+              GIT_EDITOR=true git rebase --continue
+            fi
+            sleep $((attempt * 2))
+          done
+          echo "Failed to push version bump after retries" >&2
+          exit 1
 
       - name: Create tag and GitHub Release
         shell: bash
@@ -207,22 +227,34 @@ jobs:
         run: |
           set -euo pipefail
           TAG="v${VERSION}"
-          git tag -a "${TAG}" -m "Save 4Bucks ${VERSION}"
-          git push origin "${TAG}"
+          if git ls-remote --tags origin "refs/tags/${TAG}" | grep -q "${TAG}"; then
+            echo "Tag ${TAG} already exists on remote — skipping tag create"
+          else
+            git tag -a "${TAG}" -m "Save 4Bucks ${VERSION}"
+            git push origin "${TAG}"
+          fi
 
-          NOTES="$(printf '%s\n' \
-            "## Save 4Bucks ${VERSION}" \
-            "" \
-            "Automated release from CI." \
-            "" \
-            "### Artifacts" \
-            "- \`Save4Bucks-x64.exe\` - 64-bit Windows (Flet / Flutter)" \
-            "- \`Save4Bucks-x86.exe\` - 32-bit Windows (Flet / Flutter)" \
-            "" \
-            "Close GTAIV.exe before editing saves. Supported CE save version: **57**.")"
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "Release ${TAG} already exists — uploading assets with clobber"
+            gh release upload "${TAG}" \
+              "dist/Save4Bucks-x64.exe#Save4Bucks-x64.exe" \
+              "dist/Save4Bucks-x86.exe#Save4Bucks-x86.exe" \
+              --clobber
+          else
+            NOTES="$(printf '%s\n' \
+              "## Save 4Bucks ${VERSION}" \
+              "" \
+              "Automated release from CI." \
+              "" \
+              "### Artifacts" \
+              "- \`Save4Bucks-x64.exe\` - 64-bit Windows (Flet / Flutter)" \
+              "- \`Save4Bucks-x86.exe\` - 32-bit Windows (Flet / Flutter)" \
+              "" \
+              "Close GTAIV.exe before editing saves. Supported CE save version: **57**.")"
 
-          gh release create "${TAG}" \
-            --title "Save 4Bucks ${VERSION}" \
-            --notes "${NOTES}" \
-            "dist/Save4Bucks-x64.exe#Save4Bucks-x64.exe" \
-            "dist/Save4Bucks-x86.exe#Save4Bucks-x86.exe"
+            gh release create "${TAG}" \
+              --title "Save 4Bucks ${VERSION}" \
+              --notes "${NOTES}" \
+              "dist/Save4Bucks-x64.exe#Save4Bucks-x64.exe" \
+              "dist/Save4Bucks-x86.exe#Save4Bucks-x86.exe"
+          fi
