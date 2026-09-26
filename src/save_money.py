@@ -7,45 +7,18 @@ import struct
 from pathlib import Path
 
 from .backup import BackupResult, create_dual_backup
+from .playerinfo import OFF_DISPLAY_MONEY, OFF_MONEY, parse_blocks, playerinfo_loc
 from .versioning import WriteCheck, check_write
-
-
-def parse_blocks(data: bytes) -> list[tuple[int, int, int]]:
-    """Return list of (index, offset, size) for BLOCK chunks."""
-    off = 0x110
-    blocks: list[tuple[int, int, int]] = []
-    for i in range(40):
-        if off + 9 > len(data):
-            break
-        if data[off : off + 5] != b"BLOCK":
-            break
-        size = struct.unpack_from("<I", data, off + 5)[0]
-        if size < 9 or off + size > len(data):
-            break
-        blocks.append((i, off, size))
-        off += size
-    return blocks
 
 
 def read_money(data: bytes) -> tuple[int, int, int, int]:
     """Return money, display_money, money_abs_off, display_abs_off."""
-    blocks = parse_blocks(data)
-    if len(blocks) < 2:
-        raise RuntimeError(f"Expected PlayerInfo as block 1, got {len(blocks)} blocks")
-    _, bo, bs = blocks[1]
-    block = data[bo : bo + bs]
-    # After "BLOCK" (5 bytes), wiki PlayerInfo table:
-    # +0x00 size, +0x04 float[3] coords, +0x10 = 192, +0x14 = PlayerInfo
-    # money at PlayerInfo+0x08, display at +0x10
-    base = 5
-    const = struct.unpack_from("<I", block, base + 0x10)[0]
-    if const != 192:
-        raise RuntimeError(f"Unexpected PlayerInfo size marker {const} (expected 192)")
-    money_rel = base + 0x14 + 0x08
-    disp_rel = base + 0x14 + 0x10
-    money = struct.unpack_from("<I", block, money_rel)[0]
-    disp = struct.unpack_from("<I", block, disp_rel)[0]
-    return money, disp, bo + money_rel, bo + disp_rel
+    loc = playerinfo_loc(data)
+    m_off = loc.abs(OFF_MONEY)
+    d_off = loc.abs(OFF_DISPLAY_MONEY)
+    money = struct.unpack_from("<I", data, m_off)[0]
+    disp = struct.unpack_from("<I", data, d_off)[0]
+    return money, disp, m_off, d_off
 
 
 def read_money_file(path: Path) -> tuple[int, int]:
