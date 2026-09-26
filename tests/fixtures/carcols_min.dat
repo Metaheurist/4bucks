@@ -1,0 +1,7 @@
+# Minimal carcols.dat fixture for unit tests
+col
+10,10,10,-,black			# 0 black
+37,37,39,-,black			# 1 black poly
+162,20,20,-,red				# 27 very red
+255,255,255,-,white			# 133 very white
+end
