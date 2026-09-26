@@ -1,21 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true">
-  <!-- Polished side-view pistol -->
-  <g stroke="#e0c04a" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">
-    <!-- Barrel -->
-    <path d="M2 9.5 H8.5"/>
-    <!-- Slide top edge + muzzle block -->
-    <path d="M2 9.5 V12.2 H14.8 V9.5 H18.5 L19.8 8.2 H21.5"/>
-    <!-- Bottom of receiver to trigger area -->
-    <path d="M8.5 12.2 H14.8"/>
-    <!-- Trigger guard loop -->
-    <path d="M10.4 12.2 C10.4 14.6 11.6 15.6 13.2 15.6 H14.8 V12.2"/>
-    <!-- Trigger -->
-    <path d="M12.2 12.2 V14.4"/>
-    <!-- Grip -->
-    <path d="M14.8 12.2 L16.2 18.2 H19 L17.2 12.2"/>
-    <!-- Front sight -->
-    <path d="M4.2 9.5 V8.1"/>
-    <!-- Rear sight -->
-    <path d="M13.6 9.5 V8.3"/>
-  </g>
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" role="img" aria-hidden="true">
+  <path
+    d="M2 9.5h14v4H12v2c0 1.5 1 2.5 2.5 2.5V20h-3c-3 0-4.5-2-4.5-5.5H2v-5zM16 13.5h2.5l1.5 5.5h2.5L20.5 13.5H16z"
+    stroke="#e0c04a"
+    stroke-width="1.7"
+    stroke-linejoin="round"
+    stroke-linecap="round"
+  />
 </svg>
