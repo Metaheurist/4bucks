@@ -22,10 +22,10 @@ Tree, dependencies, and troubleshooting for contributors.
 
 | File | Role |
 |------|------|
-| `requirements.txt` | PyInstaller, Pillow (packaging) |
+| `requirements.txt` | Flet, PyInstaller, Pillow (UI + packaging) |
 | `requirements-dev.txt` | pytest, pip-audit (+ runtime via `-r`) |
 
-UI uses the Python stdlib (`tkinter`). Runtime editing code has no third-party imports beyond the frozen build toolchain.
+UI uses **Flet** (Flutter for Python). Runtime editing code otherwise has no third-party imports beyond the frozen build toolchain.
 
 ## Troubleshooting
 

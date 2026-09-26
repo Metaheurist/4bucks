@@ -45,7 +45,7 @@ Single arch / custom interpreters:
 .\build.ps1 -SkipChecks   # not recommended
 ```
 
-`build.ps1` creates `.venv` / `.venv-x86`, installs deps, runs **pytest** + **pip-audit**, ensures `assets\icon.ico`, then PyInstaller (`SAVE4BUCKS_ARCH`).
+`build.ps1` creates `.venv` / `.venv-x86`, installs deps, runs **pytest** + **pip-audit**, ensures `assets\icon.ico`, then **`flet pack`** per arch.
 
 Details: **[build-test-and-ci.md](build-test-and-ci.md)**.
 

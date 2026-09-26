@@ -28,7 +28,7 @@ Save 4Bucks is an **offline**, local Windows tool. It reads/writes your own `SGT
 
 Autobackup writes copies beside the save (`.backup`) and under `backups\` next to the app (or EXE). Treat those files as sensitive save data.
 
-## What we do not do
+## What I do not do
 
 - Process memory read/write
 - DLL injection / ASI trainers

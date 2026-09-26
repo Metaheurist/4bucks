@@ -11,5 +11,5 @@ Active roadmap for Save 4Bucks (post v1.1.0). Shipped work lives in [CHANGELOG.m
 ## Later
 
 - Signed EXE / SmartScreen guidance for release artifacts.
-- Optional dark theme / accessibility pass on the tkinter UI.
+- Optional dark theme / accessibility pass on the Flet UI.
 - Contributor guide (`CONTRIBUTING.md`) if the project gains external PRs.

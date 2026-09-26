@@ -13,7 +13,7 @@ What the script does:
 3. Runs **pytest** (`tests/unit`) once
 4. Runs **pip-audit** (fails on known CVEs)
 5. Ensures `assets\icon.ico`
-6. PyInstaller via `save4bucks.spec` per arch (`SAVE4BUCKS_ARCH=x64|x86`)
+6. ``flet pack`` (Flutter desktop client + PyInstaller) per arch
 
 Manual:
 
@@ -23,8 +23,7 @@ python -m venv .venv
 pip install -r requirements.txt -r requirements-dev.txt
 pytest tests/unit -q
 pip-audit -r requirements.txt
-$env:SAVE4BUCKS_ARCH = 'x64'
-pyinstaller --noconfirm save4bucks.spec
+flet pack save4bucks.py -n Save4Bucks-x64 -i assets\icon.ico --distpath dist -y
 ```
 
 ## CI/CD

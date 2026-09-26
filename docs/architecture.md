@@ -5,7 +5,7 @@
 ## Module map
 
 ```text
-UI (app.py)
+UI (app.py - Flet / Flutter)
   → detect.py          find Profiles / list SGTA4 slots / game running?
   → versioning.py      SAVE magic, version allowlist, PlayerInfo gate
   → save_money.py      parse BLOCK / read+write money

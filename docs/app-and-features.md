@@ -7,7 +7,7 @@
 ```mermaid
 %%{init: {'flowchart': {'useMaxWidth': true}}}%%
 flowchart TB
-  UI[tkinter UI app.py]
+  UI[Flet Flutter UI app.py]
   Detect[detect.py]
   Ver[versioning.py]
   Money[save_money.py]

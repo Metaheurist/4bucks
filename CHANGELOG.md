@@ -2,6 +2,11 @@
 
 Canonical notes: **[docs/CHANGELOG.md](docs/CHANGELOG.md)**.
 
+## v1.2.0
+
+- UI redesigned on **Flet** (Flutter for Python); packaging via `flet pack`.
+- Docs: first-person "I" wording; hub icons remain GTA IV phone-menu style.
+
 ## v1.1.0
 
 - Dual-arch Windows EXE builds (`Save4Bucks-x64.exe`, `Save4Bucks-x86.exe`) via `build.ps1` and CI.

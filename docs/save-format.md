@@ -28,8 +28,8 @@ Save 4Bucks writes **only** those two fields and keeps them equal.
 
 ## Checksum
 
-Wiki: trailing checksum is **ignored** by the PC game for load. We do not rewrite it.
+Wiki: trailing checksum is **ignored** by the PC game for load. I do not rewrite it.
 
-## What we never change
+## What I never change
 
 File length, block sizes, Scripts, Stats, Radar, End block.

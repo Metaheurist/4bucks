@@ -2,9 +2,9 @@
 
 **Save 4Bucks** is a Windows desktop tool that edits **cash** in Grand Theft Auto IV **Complete Edition** save files (`SGTA4xx`). It is an **offline save editor only** - no process memory, no injection, no live godmode/weapons.
 
-**Latest changes:** **[CHANGELOG.md](CHANGELOG.md)** (current **v1.1.0** - dual-arch x64/x86 builds, GitHub Actions release pipeline, docs hub).
+**Latest changes:** **[CHANGELOG.md](CHANGELOG.md)** (current **v1.2.0** - Flet/Flutter UI, dual-arch pack, docs hub).
 
-### Here's what we plan next
+### Here's what I plan next
 
 **[docs/next-phase-development-plan.md](docs/next-phase-development-plan.md)** - optional UX polish, broader CE verification notes, and packaging improvements. Shipped work is in the **[changelog](docs/CHANGELOG.md)** and **[app overview](docs/app-and-features.md)**.
 
@@ -16,7 +16,7 @@
 <td>
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
-[![tkinter](https://img.shields.io/badge/UI-tkinter%20(stdlib)-3776AB?style=flat-square&logo=python&logoColor=white)](https://docs.python.org/3/library/tkinter.html)
+[![Flet](https://img.shields.io/badge/UI-Flet%20(Flutter)-02569B?style=flat-square&logo=flutter&logoColor=white)](https://flet.dev/)
 [![Windows](https://img.shields.io/badge/Windows-10%2F11-0078D6?style=flat-square&logo=windows&logoColor=white)](https://www.microsoft.com/windows)
 
 </td>
@@ -25,7 +25,7 @@
 <td><b>📦&nbsp;Packaging</b></td>
 <td>
 
-[![PyInstaller](https://img.shields.io/badge/PyInstaller-6.22.3-000000?style=flat-square)](https://pyinstaller.org/)
+[![PyInstaller](https://img.shields.io/badge/Pack-flet%20pack%20%2B%20PyInstaller-000000?style=flat-square)](https://flet.dev/docs/publish/using-pyinstaller)
 [![Pillow](https://img.shields.io/badge/Pillow-12.3.0-8B5CF6?style=flat-square)](https://python-pillow.org/)
 [![x64](https://img.shields.io/badge/EXE-x64-2e7d32?style=flat-square)](docs/build-test-and-ci.md)
 [![x86](https://img.shields.io/badge/EXE-x86-2e7d32?style=flat-square)](docs/build-test-and-ci.md)
@@ -70,7 +70,7 @@ Long-form sections live under **`docs/`** so the main README stays short. Open t
 
 | | |
 | :--- | :--- |
-| <img src="docs/icons/lock.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Security](docs/SECURITY.md)** - offline threat model, CVE gates, what we do not do |
+| <img src="docs/icons/lock.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Security](docs/SECURITY.md)** - offline threat model, CVE gates, what I do not do |
 | <img src="docs/icons/home.svg" width="32" height="32" alt="" aria-hidden="true"> | **[App overview & features](docs/app-and-features.md)** - UI flow, autobackup, save slots, CLI |
 | <img src="docs/icons/settings.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Installation & usage](docs/setup-and-usage.md)** - venv, run from source, dual-arch EXE build |
 | <img src="docs/icons/flask.svg" width="32" height="32" alt="" aria-hidden="true"> | **[Testing & configuration](docs/testing-and-configuration.md)** - pytest, pip-audit, manual checklist |
