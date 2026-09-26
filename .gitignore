@@ -12,6 +12,8 @@ tests/**/__pycache__/
 *.spec.bak
 save4bucks_settings.json
 .pytest_cache/
+.flet_stderr.txt
+.flet_stdout.txt
 
 
 Save4Bucks-*.spec

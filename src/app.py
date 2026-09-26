@@ -96,7 +96,7 @@ class Save4BucksApp:
                 ft.DataColumn(ft.Text("Modified", color=GOLD)),
             ],
             rows=[],
-            border=ft.border.all(1, GREEN),
+            border=ft.Border.all(1, GREEN),
             border_radius=6,
             heading_row_color=GREEN,
             data_row_min_height=36,
