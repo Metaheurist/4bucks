@@ -1,4 +1,4 @@
 """4Bucks - GTA IV Complete Edition offline PlayerInfo save editor."""
 
-__version__ = "1.2.12"
+__version__ = "1.2.13"
 APP_NAME = "4Bucks"
