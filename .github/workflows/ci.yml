@@ -25,9 +25,9 @@ jobs:
       !contains(github.event.head_commit.message, '[skip ci]')
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
@@ -50,11 +50,11 @@ jobs:
       !contains(github.event.head_commit.message, '[skip ci]')
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Restore Gitleaks binary
         id: gitleaks-cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: gitleaks
           key: gitleaks-8.28.0-${{ runner.os }}-x64
@@ -70,7 +70,7 @@ jobs:
       - name: Gitleaks (secret scan)
         run: ./gitleaks detect --source . --config .gitleaks.toml --no-git --verbose --exit-code 1 --redact
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
@@ -105,11 +105,11 @@ jobs:
     outputs:
       version: ${{ steps.bump.outputs.version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.ref_name }}
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -118,7 +118,7 @@ jobs:
         run: python scripts/ci/bump_version.py --write-github-output
 
       - name: Upload bumped __init__.py
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: bumped-version
           path: src/__init__.py
@@ -145,11 +145,11 @@ jobs:
           - arch: x64
           - arch: x86
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Download bumped version
         if: needs.prepare_version.result == 'success'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: bumped-version
           path: _bumped
@@ -162,7 +162,7 @@ jobs:
           Write-Host "Applied bumped version file:"
           Get-Content "src\__init__.py" | Select-String '__version__'
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         id: py
         with:
           python-version: "3.11"
@@ -183,7 +183,7 @@ jobs:
           }
 
       - name: Upload EXE artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Save4Bucks-${{ matrix.arch }}
           path: dist/Save4Bucks-${{ matrix.arch }}.exe
@@ -211,14 +211,14 @@ jobs:
       group: ci-release-${{ github.ref }}
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download bumped version
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: bumped-version
           path: _bumped
@@ -231,7 +231,7 @@ jobs:
           grep __version__ src/__init__.py
 
       - name: Download EXE artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: Save4Bucks-*
           path: release-assets
