@@ -37,9 +37,9 @@ jobs:
           - { os: ubuntu-24.04, os-label: Linux, python: "3.12", coverage: false }
           - { os: windows-latest, os-label: Windows, python: "3.11", coverage: false }
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
           cache: pip
@@ -71,7 +71,7 @@ jobs:
 
       - name: Upload coverage report
         if: ${{ always() && matrix.coverage }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-xml
           path: coverage.xml
@@ -82,9 +82,9 @@ jobs:
     name: "Smoke · Import every src module"
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip

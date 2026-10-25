@@ -18,7 +18,7 @@ Offline Windows editor for Grand Theft Auto IV **Complete Edition** `SGTA4xx` sa
 <td>
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
-[![Flet](https://img.shields.io/badge/UI-Flet%201.0.1%20(Flutter)-02569B?style=flat-square&logo=flutter&logoColor=white)](https://flet.dev/)
+[![Flet](https://img.shields.io/badge/UI-Flet%201.0.4%20(Flutter)-02569B?style=flat-square&logo=flutter&logoColor=white)](https://flet.dev/)
 [![Windows](https://img.shields.io/badge/Windows-10%2F11-0078D6?style=flat-square&logo=windows&logoColor=white)](https://www.microsoft.com/windows)
 
 </td>
@@ -41,8 +41,8 @@ Offline Windows editor for Grand Theft Auto IV **Complete Edition** `SGTA4xx` sa
 </td>
 <td>
 
-[![pytest](https://img.shields.io/badge/pytest-9.0.3-0A9EDC?style=flat-square&logo=pytest&logoColor=white)](https://pytest.org/)
-[![pip-audit](https://img.shields.io/badge/pip--audit-2.9.0-CB3837?style=flat-square)](https://pypi.org/project/pip-audit/)
+[![pytest](https://img.shields.io/badge/pytest-9.1.1-0A9EDC?style=flat-square&logo=pytest&logoColor=white)](https://pytest.org/)
+[![pip-audit](https://img.shields.io/badge/pip--audit-2.10.1-CB3837?style=flat-square)](https://pypi.org/project/pip-audit/)
 [![Gitleaks](https://img.shields.io/badge/Gitleaks-secret%20scan-1E2E3E?style=flat-square)](https://github.com/gitleaks/gitleaks)
 [![Bandit](https://img.shields.io/badge/Bandit-SAST-FFC107?style=flat-square)](https://bandit.readthedocs.io/)
 [![CodeQL](https://img.shields.io/badge/CodeQL-security--extended-2088FF?style=flat-square&logo=github&logoColor=white)](https://codeql.github.com/)

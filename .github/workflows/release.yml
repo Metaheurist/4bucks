@@ -62,11 +62,11 @@ jobs:
     outputs:
       version: ${{ steps.bump.outputs.version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.ref_name }}
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -75,7 +75,7 @@ jobs:
         run: python scripts/ci/bump_version.py --write-github-output
 
       - name: Upload bumped __init__.py
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: bumped-version
           path: src/__init__.py
@@ -96,14 +96,14 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download bumped version
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: bumped-version
           path: _bumped
@@ -115,7 +115,7 @@ jobs:
           grep __version__ src/__init__.py
 
       - name: Download EXE artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: Save4Bucks-*
           path: release-assets

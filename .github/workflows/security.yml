@@ -35,11 +35,11 @@ jobs:
     name: "Secrets · Gitleaks"
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Restore Gitleaks binary
         id: gitleaks-cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: gitleaks
           key: gitleaks-8.28.0-${{ runner.os }}-x64
@@ -59,9 +59,9 @@ jobs:
     name: "SAST · Bandit"
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -76,7 +76,7 @@ jobs:
 
       - name: Upload Bandit report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: bandit-report
           path: bandit-report.json
@@ -91,7 +91,7 @@ jobs:
       actions: read
       security-events: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4

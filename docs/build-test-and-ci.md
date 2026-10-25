@@ -7,7 +7,7 @@ Local packaging and GitHub Actions for 4Bucks.
 See [setup-and-usage.md](setup-and-usage.md) for one-shot commands.
 
 1. Creates `.venv` (x64) and/or `.venv-x86` as needed
-2. Installs `requirements.txt` + `requirements-dev.txt` (includes Flet 1.0.1)
+2. Installs `requirements.txt` + `requirements-dev.txt` (includes Flet 1.0.4)
 3. Runs pytest (`tests/unit`) once
 4. Runs pip-audit (fails on known CVEs)
 5. Ensures `assets\icon.ico`
