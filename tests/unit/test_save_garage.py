@@ -5,6 +5,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -110,8 +112,5 @@ def test_spawn_refuses_when_house_full(tmp_path: Path):
         for i, spot in enumerate(sh.spots)
     ]
     path = write_ce_save(tmp_path, with_garages=True, garage_cars=packed)
-    try:
+    with pytest.raises(RuntimeError, match="(?i)full"):
         spawn_at_safehouse(path, "broker", model=95, backup=False)
-        assert False, "expected full parking error"
-    except RuntimeError as e:
-        assert "full" in str(e).lower()

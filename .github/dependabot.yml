@@ -1,10 +1,15 @@
+# Dependabot - weekly version updates (see docs/build-test-and-ci.md).
+# Security alerts stay on the Dependabot alerts page; these groups open bump PRs.
 version: 2
 updates:
   - package-ecosystem: pip
     directory: /
     schedule:
       interval: weekly
+      day: monday
     open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore(deps)
     groups:
       pip-minor-patch:
         update-types: [minor, patch]
@@ -13,6 +18,10 @@ updates:
     directory: /
     schedule:
       interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore(ci)
     groups:
       actions:
         patterns: ["*"]

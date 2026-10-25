@@ -16,7 +16,23 @@ Coverage:
 - Dual Autobackup paths and fail-closed abort
 - Slot listing skips `*.backup`
 
+- Garages StoredCar read/write, safehouse spawn, `vehicles.ide` names, carcols paint names, livery labels
+
 Unit tests do not drive the Flet UI; they cover save, backup, and version logic only.
+
+With coverage (CI enforces a 70% floor; `src/app.py` is excluded):
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest tests/unit -q --cov --cov-fail-under=70
+```
+
+## Benchmarks
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest tests/benchmarks --benchmark-only
+```
+
+CI compares each PR against the latest `main` baseline and fails above 3x - see [build-test-and-ci.md](build-test-and-ci.md).
 
 ## Manual checklist
 
@@ -33,4 +49,4 @@ Unit tests do not drive the Flet UI; they cover save, backup, and version logic 
 .\.venv\Scripts\python.exe -m pip_audit -r requirements-dev.txt
 ```
 
-`build.ps1` runs pytest and pip-audit before packing. CI also runs Gitleaks - see [build-test-and-ci.md](build-test-and-ci.md).
+`build.ps1` runs pytest and pip-audit before packing. CI adds Gitleaks, Bandit, CodeQL, Ruff, and benchmarks - see [build-test-and-ci.md](build-test-and-ci.md).

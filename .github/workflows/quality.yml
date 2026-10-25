@@ -1,0 +1,66 @@
+# ---------------------------------------------------------------------------
+# Quality · Lint & Static Checks
+#
+# What   Ruff lint (correctness rules from pyproject.toml), byte-compile of every
+#        Python file, and actionlint over these workflow files.
+# When   Every pull request, manual dispatch, and as a release gate (release.yml).
+# Gates  Any Ruff finding; any syntax error; any invalid workflow expression.
+# Local  python -m ruff check .
+#        python -m compileall -q src scripts tests save4bucks.py
+# ---------------------------------------------------------------------------
+name: "Quality · Lint & Static Checks"
+
+on:
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  ruff:
+    name: "Lint · Ruff"
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install Ruff (pinned in requirements-dev.txt)
+        run: python -m pip install "$(grep -E '^ruff==' requirements-dev.txt)"
+
+      - name: Ruff check
+        run: python -m ruff check . --output-format=github
+
+  compile:
+    name: "Syntax · Byte-compile all Python"
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: compileall
+        run: python -m compileall -q src scripts tests save4bucks.py
+
+  actionlint:
+    name: "Workflows · actionlint"
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Download actionlint
+        run: bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.7/scripts/download-actionlint.bash) 1.7.7
+
+      - name: Lint workflow files
+        run: ./actionlint -color -shellcheck=

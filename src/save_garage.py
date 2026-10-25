@@ -192,7 +192,6 @@ def read_stored_cars_file(path: Path) -> list[StoredCar]:
 def list_safehouse_slots(data: bytes) -> list[SafehouseSlot]:
     """Curated spots per safehouse with occupying car if present."""
     cars = [c for c in read_stored_cars(data) if c.valid]
-    occupied_xy = [(c.x, c.y) for c in cars]
     # Map car -> nearest spot
     car_at: dict[tuple[str, int], StoredCar] = {}
     for c in cars:

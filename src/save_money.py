@@ -7,7 +7,7 @@ import struct
 from pathlib import Path
 
 from .backup import BackupResult, create_dual_backup
-from .playerinfo import OFF_DISPLAY_MONEY, OFF_MONEY, parse_blocks, playerinfo_loc
+from .playerinfo import OFF_DISPLAY_MONEY, OFF_MONEY, parse_blocks, playerinfo_loc  # noqa: F401 - parse_blocks is re-exported
 from .versioning import WriteCheck, check_write
 
 

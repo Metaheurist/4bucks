@@ -25,7 +25,7 @@ Dual-arch EXE: [docs/setup-and-usage.md](docs/setup-and-usage.md), `build.ps1`.
 
 - Target `main`. Keep each PR focused.
 - Run pytest and pip-audit locally ([docs/testing-and-configuration.md](docs/testing-and-configuration.md)).
-- CI must pass: unit tests, Gitleaks, pip-audit, Windows EXE matrix.
+- PR checks must pass: **Tests**, **Quality**, **Security**, **CVE**, **Build**, plus **Benchmark** and **Docs** when their paths change. See [docs/build-test-and-ci.md](docs/build-test-and-ci.md) for what each one runs and how to run it locally.
 - Use ASCII hyphens (`-`) in docs; do not commit secrets, real saves, `.venv`, `dist`, or `backups`.
 - New PlayerInfo fields: extend `src/playerinfo.py`, fixtures in `tests/unit/fixtures.py`, document in `docs/save-format.md`.
 - Garage changes: extend `src/save_garage.py` / `src/safehouse_parking.py` with tests; keep block size fixed.
@@ -37,5 +37,7 @@ Dual-arch EXE: [docs/setup-and-usage.md](docs/setup-and-usage.md), `build.ps1`.
 | Flet UI | `src/app.py` |
 | Write gate / technique | `src/versioning.py` |
 | Money / weapons / vitality | `src/save_*.py`, `src/playerinfo.py` |
-| Garages / vehicles | `src/save_garage.py`, `src/safehouse_parking.py`, `src/vehicles_catalog.py, src/carcols_catalog.py` |
-| CI | `.github/workflows/ci.yml`, `scripts/ci/` |
+| Garages / vehicles | `src/save_garage.py`, `src/safehouse_parking.py`, `src/vehicles_catalog.py`, `src/carcols_catalog.py` |
+| CI workflows | `.github/workflows/{tests,quality,security,cve,benchmark,build,docs,release}.yml`, `scripts/ci/` |
+| Benchmarks | `tests/benchmarks/` |
+| Tool config (Ruff, Bandit, coverage) | `pyproject.toml` |

@@ -1,4 +1,4 @@
-# Gitleaks configuration for CI (see .github/workflows/ci.yml).
+# Gitleaks configuration (see .github/workflows/security.yml).
 # Working-tree scan with --no-git so old commits are not re-flagged.
 
 title = "4Bucks"

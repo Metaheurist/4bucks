@@ -1,0 +1,98 @@
+# ---------------------------------------------------------------------------
+# CVE · Dependency Vulnerability Audit
+#
+# What   pip-audit of requirements.txt (shipped in the EXE) and
+#        requirements-dev.txt (build/test tooling) against two advisory sources
+#        (PyPI and OSV), plus GitHub Dependency Review on pull requests.
+# When   Every pull request, daily (06:00 UTC) so newly published CVEs surface
+#        without a code change, manual dispatch, and as a release gate.
+# Gates  Any known vulnerability in a pinned dependency; on PRs, any newly added
+#        dependency with a moderate+ advisory.
+# Notes  Dependabot (.github/dependabot.yml) opens weekly bump PRs for pip and
+#        GitHub Actions; those PRs run this workflow automatically.
+# Local  python -m pip_audit -r requirements.txt
+#        python -m pip_audit -r requirements-dev.txt
+# ---------------------------------------------------------------------------
+name: "CVE · Dependency Vulnerability Audit"
+
+on:
+  pull_request:
+    branches: [main, master]
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cve-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  pip-audit:
+    name: "Audit · pip-audit (${{ matrix.service }} advisories)"
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [pypi, osv]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install pip-audit (pinned in requirements-dev.txt)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "$(grep -E '^pip-audit==' requirements-dev.txt)"
+
+      - name: Audit runtime and dev requirements
+        env:
+          SERVICE: ${{ matrix.service }}
+        run: |
+          status=0
+          {
+            echo "## pip-audit · ${SERVICE} advisories"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+          for req in requirements.txt requirements-dev.txt; do
+            echo "::group::${req}"
+            rm -f audit.md
+            if python -m pip_audit -r "$req" --vulnerability-service "$SERVICE" --desc -f markdown -o audit.md; then
+              result="no known vulnerabilities"
+            else
+              result="VULNERABILITIES FOUND"
+              status=1
+            fi
+            cat audit.md 2>/dev/null || true
+            echo "::endgroup::"
+            {
+              echo "### \`${req}\` - ${result}"
+              echo
+              cat audit.md 2>/dev/null || true
+              echo
+            } >> "$GITHUB_STEP_SUMMARY"
+          done
+          exit "$status"
+
+  dependency-review:
+    name: "Review · New dependencies in this PR"
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v5.0.0
+        with:
+          fail-on-severity: moderate
+          comment-summary-in-pr: never
+          show-patched-versions: true

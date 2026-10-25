@@ -1,0 +1,107 @@
+# ---------------------------------------------------------------------------
+# Benchmark · Save I/O Performance
+#
+# What   pytest-benchmark micro-benchmarks (tests/benchmarks) for the save hot
+#        paths: block parsing, money/weapons/vitality reads, Garages StoredCar
+#        reads, carcols parsing, save inspection, and a set-money write round trip.
+# When   Pull requests and pushes to main that touch src/, the benchmarks, or
+#        dependencies; manual dispatch. Not a release gate.
+# Gates  On PRs only: fails if any benchmark mean is more than 3x the latest main
+#        baseline. The ratio is loose on purpose - shared runners are noisy, so
+#        this catches algorithmic regressions, not small drift.
+# Output Comparison table in the job summary; raw JSON as an artifact. Pushes to
+#        main store the JSON in the Actions cache as the next baseline.
+# Local  python -m pytest tests/benchmarks --benchmark-only
+# ---------------------------------------------------------------------------
+name: "Benchmark · Save I/O Performance"
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths:
+      - "src/**"
+      - "tests/benchmarks/**"
+      - "tests/unit/fixtures.py"
+      - "scripts/ci/benchmark_report.py"
+      - "requirements*.txt"
+      - ".github/workflows/benchmark.yml"
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "tests/benchmarks/**"
+      - "tests/unit/fixtures.py"
+      - "scripts/ci/benchmark_report.py"
+      - "requirements*.txt"
+      - ".github/workflows/benchmark.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: benchmark-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  benchmark:
+    name: "Bench · Save parsing & editing (Linux · Python 3.11)"
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
+      - name: Restore main baseline
+        if: github.event_name == 'pull_request'
+        uses: actions/cache/restore@v5
+        with:
+          path: benchmark-baseline
+          key: benchmark-baseline-${{ github.event.pull_request.base.sha }}
+          restore-keys: benchmark-baseline-
+
+      - name: Run benchmarks
+        run: |
+          python -m pytest tests/benchmarks --benchmark-only \
+            --benchmark-min-rounds=20 --benchmark-json=benchmark.json -q
+
+      - name: Report (and gate on PRs)
+        run: |
+          args=(--current benchmark.json --baseline benchmark-baseline/benchmark.json --max-ratio 3.0)
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            args+=(--fail-on-regression)
+          fi
+          python scripts/ci/benchmark_report.py "${args[@]}"
+
+      - name: Upload benchmark JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: benchmark.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Stage new baseline
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p benchmark-baseline
+          cp benchmark.json benchmark-baseline/benchmark.json
+
+      - name: Save new baseline
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/cache/save@v5
+        with:
+          path: benchmark-baseline
+          key: benchmark-baseline-${{ github.sha }}

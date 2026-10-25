@@ -1,0 +1,113 @@
+# ---------------------------------------------------------------------------
+# Tests · Unit & Coverage
+#
+# What   pytest unit suite (tests/unit) on Linux + Windows, Python 3.11 and 3.12,
+#        plus an import smoke test that loads every src module (including the
+#        Flet UI) so a broken import fails before the EXE pack does.
+# When   Every pull request, manual dispatch, and as a release gate (release.yml).
+# Gates  Any failing test; total branch coverage below 70% (Linux / 3.11 leg);
+#        any src module that fails to import.
+# Output coverage.xml artifact and a coverage table in the job summary.
+# Local  python -m pytest tests/unit -q --cov --cov-fail-under=70
+# ---------------------------------------------------------------------------
+name: "Tests · Unit & Coverage"
+
+on:
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  unit:
+    name: "Unit · ${{ matrix.os-label }} · Python ${{ matrix.python }}"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-24.04, os-label: Linux, python: "3.11", coverage: true }
+          - { os: ubuntu-24.04, os-label: Linux, python: "3.12", coverage: false }
+          - { os: windows-latest, os-label: Windows, python: "3.11", coverage: false }
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
+      - name: Run unit tests
+        if: ${{ !matrix.coverage }}
+        run: python -m pytest tests/unit -q
+
+      - name: Run unit tests with coverage (floor 70%)
+        if: ${{ matrix.coverage }}
+        run: python -m pytest tests/unit -q --cov --cov-report=xml --cov-report=term --cov-fail-under=70
+
+      - name: Coverage summary
+        if: ${{ always() && matrix.coverage }}
+        run: |
+          {
+            echo "## Coverage (Linux · Python ${{ matrix.python }})"
+            echo
+            python -m coverage report --format=markdown
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage report
+        if: ${{ always() && matrix.coverage }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          if-no-files-found: ignore
+          retention-days: 14
+
+  import-smoke:
+    name: "Smoke · Import every src module"
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Import all modules
+        run: |
+          python - <<'PY'
+          import importlib
+          import pathlib
+
+          mods = ["src"] + sorted(
+              f"src.{p.stem}" for p in pathlib.Path("src").glob("*.py") if not p.stem.startswith("__")
+          )
+          for name in mods:
+              importlib.import_module(name)
+              print(f"ok  {name}")
+          print(f"Imported {len(mods)} modules")
+          PY

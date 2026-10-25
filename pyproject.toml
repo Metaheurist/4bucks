@@ -1,0 +1,29 @@
+# Tool configuration only (4Bucks is not packaged as a wheel).
+# Used by the Quality, Security, and Tests workflows - see docs/build-test-and-ci.md.
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+extend-exclude = [".venv", ".venv-x86", "build", "dist", "backups"]
+
+[tool.ruff.lint]
+# Correctness-focused set: syntax errors, pyflakes, bugbear, import/statement hygiene.
+select = ["E4", "E7", "E9", "F", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests put the repo root on sys.path before importing src.
+"tests/**/*.py" = ["E402"]
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv", ".venv-x86", "build", "dist"]
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+# Flet UI is exercised manually; coverage targets the save/format logic.
+omit = ["src/app.py", "src/__main__.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+precision = 1

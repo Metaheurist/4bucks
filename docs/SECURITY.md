@@ -11,7 +11,9 @@ Authoritative security guide for this repository.
 - Runtime dependencies are pinned in `requirements.txt` (includes Flet for the desktop UI).
 - Dev/audit dependencies are in `requirements-dev.txt`.
 - `build.ps1` runs `pip-audit` and fails the build on known CVEs.
-- CI runs Gitleaks (secret scan; README/docs allowlisted for badge false positives) and `pip-audit` before every release - see [build-test-and-ci.md](build-test-and-ci.md).
+- **CVE · Dependency Vulnerability Audit** runs pip-audit against PyPI and OSV advisories on every PR, daily, and before every release. On PRs, GitHub Dependency Review blocks newly added vulnerable packages. Dependabot opens weekly bump PRs.
+- **Security · SAST & Secret Scanning** runs Gitleaks (README/docs allowlisted for badge false positives), Bandit, and CodeQL on every PR, weekly, and before every release.
+- See [build-test-and-ci.md](build-test-and-ci.md) for gates and local commands.
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip_audit -r requirements.txt

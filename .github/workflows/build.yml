@@ -1,0 +1,110 @@
+# ---------------------------------------------------------------------------
+# Build · Windows EXE (x64 + x86)
+#
+# What   Packs Save4Bucks-x64.exe and Save4Bucks-x86.exe with build.ps1 (flet pack /
+#        PyInstaller), then verifies each EXE: PE header, CPU architecture, and a
+#        minimum size (catches a pack that silently dropped the Flet client).
+# When   Pull requests that touch code or build inputs (docs-only PRs skip it),
+#        manual dispatch, and from release.yml with the bumped version applied.
+# Gates  build.ps1 failure; wrong architecture; EXE under 20 MB.
+# Output Artifact Save4Bucks-<arch> containing the EXE and its .sha256 file.
+# Inputs use-bumped-version (workflow_call only): apply the src/__init__.py from
+#        the bumped-version artifact so the packed EXE matches the release tag.
+# Local  .\build.ps1 -Arch x64
+# ---------------------------------------------------------------------------
+name: "Build · Windows EXE (x64 + x86)"
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      use-bumped-version:
+        description: Apply src/__init__.py from the bumped-version artifact before packing
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  exe:
+    name: "Pack · Save4Bucks-${{ matrix.arch }}.exe"
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, x86]
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Download bumped version
+        if: ${{ inputs.use-bumped-version }}
+        uses: actions/download-artifact@v4
+        with:
+          name: bumped-version
+          path: _bumped
+
+      - name: Apply bumped __init__.py
+        if: ${{ inputs.use-bumped-version }}
+        shell: pwsh
+        run: |
+          Copy-Item -Force "_bumped\__init__.py" "src\__init__.py"
+          Get-Content "src\__init__.py" | Select-String '__version__'
+
+      - uses: actions/setup-python@v6
+        id: py
+        with:
+          python-version: "3.11"
+          architecture: ${{ matrix.arch }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Build EXE (build.ps1)
+        shell: pwsh
+        env:
+          ARCH: ${{ matrix.arch }}
+          PY: ${{ steps.py.outputs.python-path }}
+        run: |
+          if ($env:ARCH -eq 'x64') {
+            powershell -ExecutionPolicy Bypass -File .\build.ps1 -SkipChecks -Arch x64 -PythonX64 $env:PY
+          } else {
+            powershell -ExecutionPolicy Bypass -File .\build.ps1 -SkipChecks -Arch x86 -PythonX86 $env:PY
+          }
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Verify EXE and write checksum
+        shell: pwsh
+        env:
+          ARCH: ${{ matrix.arch }}
+          PY: ${{ steps.py.outputs.python-path }}
+        run: |
+          $exe = "dist\Save4Bucks-$env:ARCH.exe"
+          $out = & $env:PY scripts\ci\verify_exe.py $exe --arch $env:ARCH --min-mb 20
+          if ($LASTEXITCODE -ne 0) { $out; exit 1 }
+          $out
+          ($out | Select-Object -Last 1) | Set-Content -Encoding ascii "$exe.sha256"
+          "## Save4Bucks-$env:ARCH.exe" >> $env:GITHUB_STEP_SUMMARY
+          '```' >> $env:GITHUB_STEP_SUMMARY
+          $out >> $env:GITHUB_STEP_SUMMARY
+          '```' >> $env:GITHUB_STEP_SUMMARY
+
+      - name: Upload EXE artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Save4Bucks-${{ matrix.arch }}
+          path: |
+            dist/Save4Bucks-${{ matrix.arch }}.exe
+            dist/Save4Bucks-${{ matrix.arch }}.exe.sha256
+          if-no-files-found: error
+          retention-days: 14

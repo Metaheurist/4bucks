@@ -44,7 +44,25 @@ Offline Windows editor for Grand Theft Auto IV **Complete Edition** `SGTA4xx` sa
 [![pytest](https://img.shields.io/badge/pytest-9.0.3-0A9EDC?style=flat-square&logo=pytest&logoColor=white)](https://pytest.org/)
 [![pip-audit](https://img.shields.io/badge/pip--audit-2.9.0-CB3837?style=flat-square)](https://pypi.org/project/pip-audit/)
 [![Gitleaks](https://img.shields.io/badge/Gitleaks-secret%20scan-1E2E3E?style=flat-square)](https://github.com/gitleaks/gitleaks)
-[![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI-2088FF?style=flat-square&logo=githubactions&logoColor=white)](https://github.com/Metaheurist/4bucks/actions)
+[![Bandit](https://img.shields.io/badge/Bandit-SAST-FFC107?style=flat-square)](https://bandit.readthedocs.io/)
+[![CodeQL](https://img.shields.io/badge/CodeQL-security--extended-2088FF?style=flat-square&logo=github&logoColor=white)](https://codeql.github.com/)
+[![Ruff](https://img.shields.io/badge/Ruff-lint-D7FF64?style=flat-square&logo=ruff&logoColor=black)](https://docs.astral.sh/ruff/)
+
+</td>
+</tr>
+<tr>
+<td valign="middle" width="140">
+<img src="docs/icons/timer.svg" width="28" height="28" alt="" aria-hidden="true">&nbsp;<b>Pipelines</b>
+</td>
+<td>
+
+[![Tests](https://github.com/Metaheurist/4bucks/actions/workflows/tests.yml/badge.svg)](https://github.com/Metaheurist/4bucks/actions/workflows/tests.yml)
+[![Quality](https://github.com/Metaheurist/4bucks/actions/workflows/quality.yml/badge.svg)](https://github.com/Metaheurist/4bucks/actions/workflows/quality.yml)
+[![Security](https://github.com/Metaheurist/4bucks/actions/workflows/security.yml/badge.svg)](https://github.com/Metaheurist/4bucks/actions/workflows/security.yml)
+[![CVE](https://github.com/Metaheurist/4bucks/actions/workflows/cve.yml/badge.svg)](https://github.com/Metaheurist/4bucks/actions/workflows/cve.yml)
+[![Benchmark](https://github.com/Metaheurist/4bucks/actions/workflows/benchmark.yml/badge.svg)](https://github.com/Metaheurist/4bucks/actions/workflows/benchmark.yml)
+[![Build](https://github.com/Metaheurist/4bucks/actions/workflows/build.yml/badge.svg)](https://github.com/Metaheurist/4bucks/actions/workflows/build.yml)
+[![Release](https://github.com/Metaheurist/4bucks/actions/workflows/release.yml/badge.svg)](https://github.com/Metaheurist/4bucks/actions/workflows/release.yml)
 
 </td>
 </tr>
@@ -54,7 +72,7 @@ Offline Windows editor for Grand Theft Auto IV **Complete Edition** `SGTA4xx` sa
 
 <!-- SAVE4BUCKS_BUILD_INFO_START -->
 
-[![CI builds](https://img.shields.io/badge/build-see%20Actions-2e7d32?style=flat-square)](https://github.com/Metaheurist/4bucks/actions)
+[![Release](https://github.com/Metaheurist/4bucks/actions/workflows/release.yml/badge.svg)](https://github.com/Metaheurist/4bucks/actions/workflows/release.yml)
 
 **CI builds** (Windows EXE)
 

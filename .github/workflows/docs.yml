@@ -1,0 +1,43 @@
+# ---------------------------------------------------------------------------
+# Docs · Markdown Link Check
+#
+# What   Verifies every repo-relative link and image in *.md files (README, docs/,
+#        CONTRIBUTING) points at a file that exists. External URLs are skipped so
+#        the check is offline and never flaky.
+# When   Pull requests that touch Markdown, docs/, or assets/; manual dispatch.
+# Gates  Any broken relative link or missing embedded image.
+# Local  python scripts/ci/check_md_links.py
+# ---------------------------------------------------------------------------
+name: "Docs · Markdown Link Check"
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths:
+      - "**/*.md"
+      - "docs/**"
+      - "assets/**"
+      - "scripts/ci/check_md_links.py"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  links:
+    name: "Links · Relative paths resolve"
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Check Markdown links
+        run: python scripts/ci/check_md_links.py

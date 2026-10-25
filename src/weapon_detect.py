@@ -105,7 +105,11 @@ def _parse_weaponinfo(path: Path) -> dict[int, str]:
     except OSError:
         return found
     try:
-        root = ET.fromstring(text)
+        # Mod XML is untrusted: refuse DTDs so entity expansion can't blow up memory
+        # (this guard is why the B314 finding below is suppressed).
+        if re.search(r"<!(?:DOCTYPE|ENTITY)", text, re.IGNORECASE):
+            raise ET.ParseError("DTD declarations are not allowed")
+        root = ET.fromstring(text)  # nosec B314
         for el in root.iter():
             wid = el.attrib.get("type") or el.attrib.get("id") or el.attrib.get("slot")
             name = el.attrib.get("name") or el.attrib.get("weaponName") or el.tag

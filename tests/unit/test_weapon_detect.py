@@ -12,6 +12,7 @@ from src.weapon_detect import (
     _gta_under_steam_library,
     _normalize_install,
     _parse_libraryfolders_vdf,
+    _parse_weaponinfo,
     _steam_roots_on_drive,
     inspect_install,
     list_gtaiv_installs,
@@ -26,6 +27,24 @@ def test_normalize_install_nested_gtaiv(tmp_path: Path):
     (nested / "common" / "data").mkdir(parents=True)
     assert _normalize_install(root) == nested.resolve()
     assert _normalize_install(nested) == nested.resolve()
+
+
+def test_parse_weaponinfo_reads_mod_ids(tmp_path: Path):
+    xml = tmp_path / "weaponinfo.xml"
+    xml.write_text('<weapons><weapon type="77" name="RAILGUN"/></weapons>', encoding="utf-8")
+    assert _parse_weaponinfo(xml) == {77: "RAILGUN"}
+
+
+def test_parse_weaponinfo_refuses_entity_expansion(tmp_path: Path):
+    xml = tmp_path / "weaponinfo.xml"
+    xml.write_text(
+        '<?xml version="1.0"?>\n'
+        '<!DOCTYPE w [<!ENTITY a "aaaaaaaaaa"><!ENTITY b "&a;&a;&a;&a;&a;&a;&a;&a;">]>\n'
+        '<weapons><weapon type="78" name="&b;"/></weapons>',
+        encoding="utf-8",
+    )
+    parsed = _parse_weaponinfo(xml)
+    assert all("aaaaaaaaaa" not in name for name in parsed.values())
 
 
 def test_inspect_install_marks_asi_modded(tmp_path: Path):

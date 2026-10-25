@@ -1,0 +1,209 @@
+# ---------------------------------------------------------------------------
+# Release · Version Bump & Publish
+#
+# What   The push-to-main pipeline. Runs the category workflows as gates, bumps
+#        the patch version, packs both EXEs once with that version, then commits
+#        the bump, tags vX.Y.Z, and publishes a GitHub Release with checksums.
+# When   Every push to main (bot commits carrying [skip ci] are skipped by
+#        GitHub), or manual dispatch on main.
+#
+#   Gate · Tests ────┐
+#   Gate · Quality ──┤
+#   Gate · Security ─┼─> Version · Bump patch ─> Build · EXEs ─> Publish · Release
+#   Gate · CVE ──────┘
+#
+# Gates  All four gate workflows must pass before anything is versioned or built.
+# Output Tag vX.Y.Z, GitHub Release with Save4Bucks-x64.exe, Save4Bucks-x86.exe,
+#        and SHA256SUMS.txt; version bump committed back to main as [skip ci].
+# Notes  The release job does not rebuild - it downloads the gated EXE artifacts.
+#        Needs Actions write access to main (Settings > Actions > Workflow
+#        permissions) or a PAT if branch protection blocks the bot push.
+# ---------------------------------------------------------------------------
+name: "Release · Version Bump & Publish"
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  tests:
+    name: "Gate · Tests"
+    uses: ./.github/workflows/tests.yml
+
+  quality:
+    name: "Gate · Quality"
+    uses: ./.github/workflows/quality.yml
+
+  security:
+    name: "Gate · Security"
+    uses: ./.github/workflows/security.yml
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+
+  cve:
+    name: "Gate · CVE"
+    uses: ./.github/workflows/cve.yml
+
+  prepare_version:
+    name: "Version · Bump patch"
+    needs: [tests, quality, security, cve]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref_name }}
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Bump patch version
+        id: bump
+        run: python scripts/ci/bump_version.py --write-github-output
+
+      - name: Upload bumped __init__.py
+        uses: actions/upload-artifact@v4
+        with:
+          name: bumped-version
+          path: src/__init__.py
+          if-no-files-found: error
+          retention-days: 7
+
+  build:
+    name: "Build · EXEs"
+    needs: [prepare_version]
+    uses: ./.github/workflows/build.yml
+    with:
+      use-bumped-version: true
+
+  publish:
+    name: "Publish · GitHub Release"
+    needs: [prepare_version, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download bumped version
+        uses: actions/download-artifact@v4
+        with:
+          name: bumped-version
+          path: _bumped
+
+      - name: Apply bumped __init__.py for commit
+        run: |
+          set -euo pipefail
+          cp _bumped/__init__.py src/__init__.py
+          grep __version__ src/__init__.py
+
+      - name: Download EXE artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: Save4Bucks-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Verify assets and build SHA256SUMS.txt
+        working-directory: release-assets
+        run: |
+          set -euo pipefail
+          ls -la
+          test -f Save4Bucks-x64.exe
+          test -f Save4Bucks-x86.exe
+          sha256sum Save4Bucks-x64.exe Save4Bucks-x86.exe > SHA256SUMS.txt
+          for arch in x64 x86; do
+            diff <(cut -d' ' -f1 "Save4Bucks-${arch}.exe.sha256") <(grep "Save4Bucks-${arch}.exe" SHA256SUMS.txt | cut -d' ' -f1)
+          done
+          cat SHA256SUMS.txt
+
+      - name: Commit version bump
+        env:
+          VERSION: ${{ needs.prepare_version.outputs.version }}
+          REF: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/__init__.py
+          git commit -m "chore(release): bump version to ${VERSION} [skip ci]"
+
+          # Main may have moved during the build - rebase and retry push.
+          for attempt in 1 2 3 4 5 6; do
+            if git push origin "HEAD:${REF}"; then
+              echo "Pushed version bump on attempt ${attempt}"
+              exit 0
+            fi
+            echo "Push rejected (attempt ${attempt}); rebasing onto origin/${REF}..."
+            git fetch origin "${REF}"
+            if ! git rebase "origin/${REF}"; then
+              echo "Rebase conflict - keeping bumped src/__init__.py"
+              git checkout --ours -- src/__init__.py || true
+              git add src/__init__.py
+              GIT_EDITOR=true git rebase --continue
+            fi
+            sleep $((attempt * 2))
+          done
+          echo "Failed to push version bump after retries" >&2
+          exit 1
+
+      - name: Create tag and GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.prepare_version.outputs.version }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          TAG="v${VERSION}"
+          ASSETS=(
+            "release-assets/Save4Bucks-x64.exe#Save4Bucks-x64.exe"
+            "release-assets/Save4Bucks-x86.exe#Save4Bucks-x86.exe"
+            "release-assets/SHA256SUMS.txt#SHA256SUMS.txt"
+          )
+
+          if git ls-remote --tags origin "refs/tags/${TAG}" | grep -q "${TAG}"; then
+            echo "Tag ${TAG} already exists on remote - skipping tag create"
+          else
+            git tag -a "${TAG}" -m "4Bucks ${VERSION}"
+            git push origin "${TAG}"
+          fi
+
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "Release ${TAG} already exists - uploading assets with clobber"
+            gh release upload "${TAG}" "${ASSETS[@]}" --clobber
+            exit 0
+          fi
+
+          NOTES="$(printf '%s\n' \
+            "## 4Bucks ${VERSION}" \
+            "" \
+            "Automated release from [${GITHUB_WORKFLOW}](${RUN_URL})." \
+            "" \
+            "### Artifacts" \
+            "- \`Save4Bucks-x64.exe\` - 64-bit Windows (Flet / Flutter)" \
+            "- \`Save4Bucks-x86.exe\` - 32-bit Windows (Flet / Flutter)" \
+            "- \`SHA256SUMS.txt\` - verify with \`Get-FileHash .\\Save4Bucks-x64.exe\`" \
+            "" \
+            "### Gates passed" \
+            "Tests (Linux + Windows, coverage floor) · Quality (Ruff, actionlint) · Security (Gitleaks, Bandit, CodeQL) · CVE (pip-audit: PyPI + OSV)" \
+            "" \
+            "Close GTAIV.exe before editing saves. Supported CE save version: **57**.")"
+
+          gh release create "${TAG}" --title "4Bucks ${VERSION}" --notes "${NOTES}" "${ASSETS[@]}"
