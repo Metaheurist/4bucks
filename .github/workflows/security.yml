@@ -2,7 +2,9 @@
 # Security · SAST & Secret Scanning
 #
 # What   Gitleaks secret scan of the working tree, Bandit static analysis of the
-#        Python sources, and GitHub CodeQL (security-extended queries).
+#        Python sources, and CodeQL (security-extended) for Python and Actions.
+#        This replaces GitHub's default "CodeQL" setup, which cannot run beside
+#        an advanced workflow.
 # When   Every pull request, weekly (Mon 05:00 UTC), manual dispatch, and as a
 #        release gate on every push to main (release.yml) - which also keeps the
 #        default-branch CodeQL baseline fresh for PR comparisons.
@@ -84,7 +86,7 @@ jobs:
           retention-days: 30
 
   codeql:
-    name: "SAST · CodeQL (Python)"
+    name: "SAST · CodeQL (Python + Actions)"
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -93,14 +95,15 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Repo default setup is off: GitHub rejects advanced uploads while it is enabled.
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
-          languages: python
+          languages: python,actions
           build-mode: none
           queries: security-extended
 
       - name: Analyze
         uses: github/codeql-action/analyze@v4
         with:
-          category: "/language:python"
+          category: "/language:python-actions"
