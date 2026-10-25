@@ -119,7 +119,7 @@ function Build-One {
     $flet = Join-Path $scriptsDir 'flet.exe'
     if (-not (Test-Path $flet)) {
         Write-Host 'Installing flet-cli ...'
-        & $PythonExe -m pip install 'flet-cli==1.0.4' -q
+        & $PythonExe -m pip install 'flet-cli==1.0.5' -q
         if ($LASTEXITCODE -ne 0) { throw 'flet-cli install failed' }
     }
     if (-not (Test-Path $flet)) { throw "flet.exe not found next to $PythonExe" }

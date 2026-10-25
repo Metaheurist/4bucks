@@ -23,7 +23,7 @@ Repository layout, dependencies, and troubleshooting pointers.
 
 | File | Role |
 |------|------|
-| `requirements.txt` | Flet 1.0.4, PyInstaller, Pillow 13 |
+| `requirements.txt` | Flet 1.0.5, PyInstaller, Pillow 13 |
 | `requirements-dev.txt` | pytest, pip-audit (+ runtime via `-r`) |
 
 UI: Flet. Save modules (`detect`, `versioning`, `playerinfo`, `save_money`, `save_weapons`, `save_vitality`, `weapon_detect`, `weapons_catalog`, `backup`, `settings`) are stdlib aside from the frozen packaging stack.

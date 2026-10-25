@@ -18,7 +18,7 @@ Offline Windows editor for Grand Theft Auto IV **Complete Edition** `SGTA4xx` sa
 <td>
 
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
-[![Flet](https://img.shields.io/badge/UI-Flet%201.0.4%20(Flutter)-02569B?style=flat-square&logo=flutter&logoColor=white)](https://flet.dev/)
+[![Flet](https://img.shields.io/badge/UI-Flet%201.0.5%20(Flutter)-02569B?style=flat-square&logo=flutter&logoColor=white)](https://flet.dev/)
 [![Windows](https://img.shields.io/badge/Windows-10%2F11-0078D6?style=flat-square&logo=windows&logoColor=white)](https://www.microsoft.com/windows)
 
 </td>
