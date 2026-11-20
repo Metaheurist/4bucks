@@ -12,7 +12,7 @@ paths = [
   '''^README\.md$''',
   '''^CHANGELOG\.md$''',
   '''^docs/''',
-  '''^\.venv/''',
+  '''^\.venv''',
   '''^\.venv-x86/''',
   '''^venv/''',
   '''^ENV/''',

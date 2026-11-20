@@ -13,15 +13,22 @@ from pathlib import Path
 from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parents[2]
-SKIP_DIRS = {".git", ".venv", ".venv-x86", "build", "dist", "backups", "node_modules", ".pytest_cache"}
+SKIP_DIRS = {".git", "build", "dist", "backups", "node_modules", ".pytest_cache"}
+SKIP_DIR_PREFIXES = (".venv",)
 
 MD_LINK = re.compile(r"!?\[[^\]]*\]\(\s*<?([^)\s>]+)>?(?:\s+\"[^\"]*\")?\s*\)")
 HTML_ATTR = re.compile(r"""(?:src|href)\s*=\s*["']([^"']+)["']""", re.IGNORECASE)
 FENCE = re.compile(r"^\s*(```|~~~)")
 
 
+def _skip_path(rel: Path) -> bool:
+    if SKIP_DIRS.intersection(rel.parts):
+        return True
+    return any(part.startswith(SKIP_DIR_PREFIXES) for part in rel.parts)
+
+
 def markdown_files() -> list[Path]:
-    return sorted(p for p in ROOT.rglob("*.md") if not SKIP_DIRS.intersection(p.relative_to(ROOT).parts))
+    return sorted(p for p in ROOT.rglob("*.md") if not _skip_path(p.relative_to(ROOT)))
 
 
 def targets(text: str) -> list[tuple[int, str]]:

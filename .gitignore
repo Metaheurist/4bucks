@@ -1,4 +1,5 @@
 .venv/
+.venv-*/
 .venv-x86/
 build/
 dist/
